@@ -26,7 +26,7 @@ library(corrr)
 ```
 
 ```{r}
-setwd("~/R-aplikacije/Datoteke/CSV")
+#setwd("~/R-aplikacije/Datoteke/CSV")
 #data <- read.table(file = "UCENICI.csv",
 
 data <- read.table(file.choose(),                  
