@@ -1,0 +1,317 @@
+---
+title: "Wilcoxon Matched Pairs Test"
+output: 
+  flexdashboard::flex_dashboard:
+    #theme: bootstrap
+    #theme: cerulean
+    #theme: flatly
+    #theme: united
+    #theme: simplex
+    theme: yeti
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(car)
+library(Rmisc)
+library(gplots)
+library(lsr)
+library(RVAideMemoire)
+library(skimr)
+```
+
+```{r Učitavanje podataka iz CSV datoteke}
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+
+#saveRDS(data, file = "UCENICI_OS.RData") 
+#head(data)
+```
+
+```{r Selekcija vaijabli}
+Selektor <- data %>% select(MJERENJE)
+#Dependent <- data %>% select(AVMT, APMT, FAEIJOJO, RVO2, MAG20Y, S20m)
+Factor <- data %>% select_if(is.factor)
+Dependent <- data %>% select_if(is.numeric)
+```
+
+```{r}
+my_data <- cbind(Factor, Dependent)
+xgdf <- cbind(Selektor, Dependent)
+vn <- variable.names(Dependent)
+nn <- variable.names(Factor)
+ns <- variable.names(Selektor)
+mm <- ncol(data)
+m <- ncol(Dependent)
+k <- ncol(Factor)
+n <- nrow(data)
+x <- Dependent[,]
+g <- Selektor[,]
+summary <- skim(data)
+```
+
+```{r}
+gr <- table(Selektor)
+n1 <- gr[1]
+n2 <- gr[2]
+grdf <- data.frame(gr)
+colnames(grdf) <- c(ns, "N")
+gr1 <- grdf[1,1]
+gr2 <- grdf[2,1]
+```
+
+```{r}
+ds <- describeBy(xgdf, ns, type=2)
+ds1 <- round (ds[[1]], digits = 2)
+ds2 <- round(ds[[2]], digits = 2)
+ds1 <- ds1[1:m+1, c(2,3,5,4,8,9,10,11,12)]
+colnames(ds1) <- c("N", "Mean", "Median", "St.dev", "Min", "Max", "Range", "Skew", "Kurt")
+ds2 <- ds2[1:m+1, c(2,3,5,4,8,9,10,11,12)]
+colnames(ds2) <- c("N", "Mean", "Median", "St.dev", "Min", "Max", "Range", "Skew", "Kurt")
+```
+
+```{r}
+j <- 0
+lt <- c(m)
+lmat <- matrix(data=1:2*m, nrow = m, ncol = 2)
+for (j in 1:m) {lt[j] <- list(leveneTest (x[,j] ~ g, center=median))
+                lmat[j,1] <- lt[[j]]$`F value`[1]
+                lmat[j,2] <- lt[[j]]$`Pr(>F)`[1]
+}
+names(lt) <- vn
+ldf <- data.frame(lmat)
+row.names(ldf) <-vn
+colnames(ldf) <- c("F", "p")
+ldf <- round(ldf, digits = 3)
+```
+
+```{r}
+if (m < 2) {t_rez <- t.test(x ~ g, var.equal = TRUE)
+
+    mean <- data.frame(t_rez$estimate)
+    ser <- data.frame(t_rez$stderr)
+    tt <- data.frame(t_rez$statistic)
+    tdf <- data.frame(t_rez$parameter)
+    tp <- data.frame(t_rez$p.value)
+    tconf.int <- data.frame(t_rez$conf.int)
+    tmean <- t(mean)
+    ci <- t(tconf.int)
+    rez <- cbind.data.frame(tmean, ser, abs(tt), tdf, tp,ci)
+    colnames(rez) <- c("Mean1", "Mean2", "SEd", "t", "df", "p", "CI-95%", "CI+95%" )
+    row.names(rez) <- c(vn)
+    rez <- round(rez, digits = 3)
+    
+} else 
+    {t_rez <- lapply(xgdf[,vn], function(x) t.test(x ~ g, var.equal = TRUE))
+    
+    mean <- data.frame(mean = sapply(t_rez, getElement, name = "estimate"))
+    ser <- data.frame(ser = sapply(t_rez, getElement, name = "stderr"))
+    tt <- data.frame(t = sapply(t_rez, getElement, name = "statistic"))
+    tdf <- data.frame(df = sapply(t_rez, getElement, name = "parameter"))
+    tp <- data.frame(p = sapply(t_rez, getElement, name = "p.value"))
+    tconf.int <- data.frame(conf.int = sapply(t_rez, getElement, name = "conf.int"))
+    tmean <- t(mean)
+    ci <- t(tconf.int)
+    rez <- cbind.data.frame(tmean, ser, abs(tt), tdf, tp,ci)
+    colnames(rez) <- c("Mean1", "Mean2", "SEd", "t", "df", "p", "CI-95%", "CI+95%" )
+    row.names(rez) <- c(vn)
+    rez <- round(rez, digits = 3)
+    }
+rez <- cbind.data.frame(rez,ldf)
+```
+
+
+Data
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(mm)
+```
+
+### Data
+
+```{r}
+valueBox(n*mm)
+```
+
+Column {data-width=200}
+-----------------------------------------------------------------------
+
+### Method
+
+**Wilcoxon Matched Pairs Test**
+
+Wilcoxonov test ekvivalentnih paraova provodi se kao neparametrijska alternativa za t – testu za zavisne uzorke kada zavisna varijabla statistički značajno odstupa od normalne distribucije.
+
+Column {data-width=790 .tabset}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+### Data Summary
+
+```{r}
+summary
+```
+
+
+Wilcoxon Matched Pairs Test
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(mm)
+```
+
+### Data
+
+```{r}
+valueBox(n*mm)
+```
+
+Column {data-width=440}
+-----------------------------------------------------------------------
+
+### Descriptive Statistics the Group 1
+
+```{r}
+DT::datatable (ds1, extensions = 'Buttons', options = list(pageLength = m+1, dom = 'Bt',buttons = c('copy')))
+```
+
+### Descriptive Statistics the Group 2
+
+```{r}
+DT::datatable (ds2, extensions = 'Buttons', options = list(pageLength = m+1, dom = 'Bt',buttons = c('copy')))
+```
+
+
+Column {data-width=550}
+-----------------------------------------------------------------------
+
+### Wilcoxon Matched Pairs Test
+
+```{r}
+
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio1", 
+                       label = "Dependent Variables:",
+                       choices = colnames(my_data[k+1:m])),
+           radioButtons("radio2", 
+                       label = "Factor:",
+                       choices = colnames(my_data[1:k])),
+           sliderInput("bins",
+                        "Broj razreda:",
+                        min = 1,
+                        max = 100,
+                        value = 7)
+          
+        ),
+        mainPanel(
+          h4("Histogram"),
+          plotOutput("histogram"),
+          hr(),
+          h4("Descriptive Statistics & Normality Test (Shapiro-Wilk)"),
+          dataTableOutput ("des"),
+          hr(),
+           h4("Wilcoxon Matched Pairs Test"),
+          textOutput ("lev"),
+          hr(),
+          h4("Box and Whiskers plot"),
+          plotOutput("box")
+             
+        )
+),
+server <- function(input, output, session) {
+
+      selectedData1 <- reactive({
+        my_data[, input$radio1]
+  })
+      selectedData2 <- reactive({   
+        my_data[, input$radio2]
+  })
+      
+       output$des <- renderDataTable({
+        Variables <- selectedData1()
+        Factor    <- selectedData2()
+        des = summarySE(my_data,
+              measurevar= input$radio1,
+              groupvars=c(input$radio2))
+        sw <- byf.shapiro(Variables~Factor,data=my_data)
+        des <- cbind(des,sw$tab)
+        colnames(des) <- c("Groups", "N", "Mean", "St. Dev.", "St. Err.", "Conf. Int.", "Shapiro-Wilk W", "p-level")
+        des%>% DT::datatable (rownames = FALSE, extensions = 'Buttons', options = list(pageLength = 100, dom = 'Bt',buttons = c('copy'))) %>% formatRound(c('Mean', 'St. Dev.', 'St. Err.', 'Conf. Int.', 'Shapiro-Wilk W', 'p-level'), 2)
+       })
+       
+      output$histogram <- renderPlot({
+        Variables    <- selectedData1()
+        Factor    <- selectedData2()
+        ggplot(my_data, aes(x=Variables)) + 
+        geom_histogram(bins=input$bins, color="#ffffff", fill="#8ecae6") +
+        labs(x= input$radio, y = "Frequency") +
+        facet_wrap(Factor)+
+        theme_minimal()
+  })
+      output$lev <- renderText({
+        Variables <- selectedData1()
+        Factor    <- selectedData2()
+        lt <- leveneTest (Variables ~ Factor, data = my_data, center=median)
+        Fl <- round(lt$`F value`[1], digits = 3)
+        pl <- round(lt$`Pr(>F)`[1], digits = 3)
+        paste("F = ", Fl,", p = ", pl)
+        wt <- wilcox.test(Variables~Factor, mu=0, alt="two.sided", conf.int=T, conf.level=0.95, paired=T, correct = F)
+        pairwise.wilcox.test (Variables, Factor)
+        paste("W = ", round(wt$statistic, digits = 2), "p = ", round(wt$p.value, digits = 4))
+      }) 
+       
+      output$box <- renderPlot({
+        Variables  <- selectedData1()
+        Groups     <- selectedData2()
+        ggplot(my_data, aes(x=Groups, y=Variables, fill=Groups)) + 
+        #geom_violin (color="#ffffff", alpha=0.7) +
+        geom_boxplot(color="#000000",outlier.colour="red",outlier.shape=8, outlier.size=4) +
+        #stat_summary(fun=mean, geom="point", shape=16, size=2, color="#000000") +
+        labs(x = input$radio1, y = input$radio2) +
+        theme_minimal()
+  })
+},
+shinyApp(ui = ui, server = server)
+)
+```
