@@ -1,5 +1,5 @@
-# Quantitative methods
-The Quantitative methods repository contains R Markdown program files (applications) for statistical and graphical analysis of data that can be used in the RStudio. Before using the applications, it is necessary to install the appropriate R packages contained in R script **0 - Install Package.R**. R Markdown program files:
+# R - aplications
+The R - aplications repository contains R Markdown program files (applications) for statistical and graphical analysis of data that can be used in the RStudio. Before using the applications, it is necessary to install the appropriate R packages contained in R script **0 - Install Package.R**. R Markdown program files:
 
 ## 1 - Frequency Tables.Rmd
 
