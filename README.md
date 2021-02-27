@@ -52,3 +52,10 @@ The R - aplications repository contains R Markdown program files (applications) 
 - P -value
 - Scatter Plot
 - Correlation Network
+
+## Data Transformation.Rmd
+- Z -value
+- T - value
+- L - value (1-5)
+- Harris Metric
+- Image Metric
