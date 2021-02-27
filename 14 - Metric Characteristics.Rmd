@@ -1,0 +1,558 @@
+---
+title: "Metric Characteristics"
+output: 
+  flexdashboard::flex_dashboard:
+    #theme: bootstrap
+    #theme: cerulean
+    #theme: flatly
+    #theme: united
+    #theme: simplex
+    theme: yeti
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(rstatix)
+library(corrr)
+library(tigerstats)
+library(skimr)
+library(irr)
+```
+
+```{r Učitavanje podataka iz CSV datoteke}
+
+setwd("~/R-aplikacije/Datoteke/CSV")
+
+#data <- read.table(file = "GIM.csv",
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+
+#saveRDS(data, file = "MUHCS20m.RData") 
+#head(data)
+```
+
+```{r Selekcija varijabli}
+
+my_data <- data %>% select_if(is.numeric)
+
+#my_data <- data %>% select(FEDSM1, FEDSM2, FEDSM3)
+#my_data <- data %>% select(BFPTAP1, BFPTAP2, BFPTAP3)
+#my_data <- data %>% select(FLPRR1,	FLPRR2,	FLPRR3)
+#my_data <- data %>% select(AGKUS1, AGKUS2, AGKUS3)
+```
+
+```{r}
+n <- nrow(my_data)                                  
+m <- ncol(my_data)
+varijable <- names(my_data)
+summary <- skim(data)
+```
+
+```{r}
+X <- as.matrix(my_data)                    
+i <- rep(c(1), times=m)                     
+Xs <- X %*% i
+Xas <- Xs/m
+colnames(Xs) <- c("X-sum")
+colnames(Xas) <- c("X-mean")
+XAS <- data.frame(Xas)
+```
+
+```{r}
+Z <- round(scale(my_data), digits = 3)
+Zm <- as.matrix(Z)                    
+Zs <- Zm %*% i                               
+Zas <- Zs/m                                 
+colnames(Zs) <- c("Z-sum")
+colnames(Zas) <- c("Z-mean")
+ZAS <- data.frame(Zas)
+```
+
+```{r}
+ds <- describe(my_data, type=3)
+ds <- ds[c(3,5,4,8,9,10,11,12)]
+colnames(ds) <- c("Mean", "Median", "St.dev", "Min", "Max", "Range", "Skew", "Kurt")
+ds <- round(ds, digits = 3)
+```
+
+```{r}
+RP <- corr.test(my_data)
+R <- RP$r
+P <- RP$p
+```
+
+```{r}
+k <- principal(X, nfactors=1, scores=TRUE) 
+lamda_values <- c(k$values[k$values>=1])
+g <- length(lamda_values)
+RH <- k[["loadings"]][]
+lamdaR1 <- k$values[1]                         
+k1 <- k$scores
+K1 <- as.data.frame(k1)                   #prva glavna kompnenta
+colnames(K1) <- c("PC1")
+```
+
+
+```{r}
+I <- diag(1, m)
+i <- diag(I)
+
+invR <- solve(R)
+invU2 <- diag(invR)
+invU <- diag(sqrt(invU2))
+U2 <- solve(diag(invU2))
+SMC <- I - U2
+SMC <- diag(SMC)
+
+AI <- Z %*% invR %*% U2                   #antiimage metrika
+colnames(AI) <- varijable
+ai <- as.matrix(AI)
+AIs <- ai %*% i
+AIas <- AIs/m
+colnames(AIs) <- c("AI-sum")
+colnames(AIas) <- c("AI-mean")
+AIAS <- as.data.frame(AIas)
+
+IM <- Z %*% (I-invR %*% U2)               #imge metrika
+colnames(IM) <- varijable
+im <- as.matrix(IM)
+IMs <- IM %*% i
+IMas <- IMs/m
+colnames(IMs) <- c("IM-sum")
+colnames(IMas) <- c("IM-mean")
+IMAS <- as.data.frame(IMas)
+
+HA <- Z %*% invU                          #Harrisova metrika
+colnames(HA) <- varijable
+ha <- as.matrix(HA)
+HAs <- HA %*% i
+HAas <- HAs/m
+colnames(HAs) <- c("HA-sum")
+colnames(HAas) <- c("HA-mean")
+HAAS <- as.data.frame(HAas)
+```
+
+
+```{r}
+kh <- principal(HA, nfactors=1, scores=TRUE) 
+HH <- kh[["loadings"]][]
+lamdaHH1 <- kh$values[1]                         
+kh1 <- kh$scores
+KH1 <- as.data.frame(kh1)                   #prva glavna kompnenta u Harrisovoj metrici
+colnames(KH1) <- c("PC1-Harris")
+```
+
+
+```{r}
+RIM <- t(scale(IM)) %*% scale(IMAS)/(n-1)
+RHA <- t(scale(HA)) %*% scale(HAAS)/(n-1)
+```
+
+
+```{r}
+CA <- U2 %*% invR %*% U2                  #matrica kovarijanci antiimage varijabli
+CG <- R + (U2 %*% invR %*% U2) - 2*U2     #matrica kovarijanci image varijabli
+CH <-  invU %*% R %*% invU                #matrica kovarijanci harrisovih varijabli
+CAM <- invR
+CGM <- R + invR - 2*I
+
+lamdaG <- eigen(CG)
+lamdaH <- eigen(CH)
+lamdaG1 <- lamdaG$values[1]
+lamdaH1 <- lamdaH$values[1]
+
+LAMDA1 <- 1-(m/(t(i) %*% R %*% i))      # Guttmanova apsolutna donja granica pouzdanosti
+#LAMDA6 <- 1-(t(i) %*% U2 %*% i) / (t(i) %*% R %*% i) # Guttman-Nicewanderova mjera pouzdanosti
+LAMDA6 <- 1-1/lamdaH1
+
+RHO1 <- (1-(1/lamdaH1))**2              # Donja granica pouzdanosti na temelju image modela
+RHO2 <- 1-1/lamdaH1**2                  # Gornja granica pouzdanosti na temelju image modela
+TAU <- lamdaG1/lamdaR1                  # Momirovićeva donja granica pouzdanosti
+RHO4 <- (1-1/lamdaR1)**2                # Donja granica pouzdanosti na temelju mirror image modela
+RHO5 <- 1-1/lamdaR1**2                  # Gornja granica pouzdanosti na temelju mirror image modela
+
+MSA1 <- t(i) %*% ((CA-U2)*(CA-U2)) %*% i
+MSA2 <- t(i) %*% ((R-I)*(R-I)) %*% i
+MSA <- 1-(MSA1/MSA2)                   #Kiser Riceov koeficijent reprezentativnosti
+k <- (m*m-m)/2  
+HOM1 <- c((sum(R)-m)/2)/k               #Prosječna korelacija čestica 
+HOM2 <- 1-(g-1)/(m-1)
+HOM3 <- lamdaG1/sum(diag(CG))
+
+```
+
+```{r}
+svar <- sum(ds[,3]*ds[,3])
+varXs <- var(Xs)                             
+varZs <- var(Zs)                             
+
+Cronbach <- m/(m-1)*(1-svar/varXs)             
+SB <- m/(m-1)*(1-m/varZs)                
+KC <- m/(m-1)*(1-1/lamdaR1)               
+                            
+K_data <- cbind.data.frame(XAS, ZAS, K1, HAAS)
+```
+
+```{r}
+hom1 <- ((R %*% i)-i)/(m-1)                         # prosječna korelacija pojedine čestice s ostalima
+msa <- 1 - ((CA-U2)**2) %*% i / ((R-I)**2) %*% i    # reprezentativnost čestica
+alp <- alpha(my_data)
+is1 <- alp$item.stats
+is2 <- alp$alpha.drop
+is <- cbind.data.frame(is1, is2, hom1, SMC, msa, RH, RIM, RHA)
+IS <- is[c(1, 6, 7, 19,  16, 8)]
+colnames(IS) <- c("N", "MEAN", "SD", "MSA", "HOM1", "ALPHA DEL.")
+IS <- round(IS, digits = 3)
+IS <- as.data.frame(IS)
+IV <- is[c(2, 19, 21)]
+IV <- round(IV, digits = 3)
+colnames(IV) <- c("BURT", "HOTT", "HARR")
+IV <- as.data.frame(IV)
+```
+
+Data
+=======================================================================
+
+Column {data-width=50}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+Column {data-width=300}
+----------------------------------------------------------------------- 
+
+### Metric Characteristics of Measuring Instruments
+
+
+**Central Tendency**
+
+- Arithmetic mean (Mean)
+- Median (Median)
+
+**Dispersion**
+
+- Standard deviation (St. dev.)
+- Minimum (Min)
+- Maximum (Max)
+- Range (Range)
+
+**Distribution**
+
+- Skewness (Skew)
+- Kurtosis (Kurt)
+- Shapiro-Wilk test (W, p)
+- Histogram
+- Box & Whiskers plot
+
+**Correlation**
+
+- Correlation Matrix
+- p - value
+
+**Metric Characteristics**
+
+- Intraclass Correlation (ICC)
+- Cronbach's alpha (Cronbach's)
+- Spearman-Brown alpha (Spearman-Brown)
+- Kaiser-Caffrey alpha (Kaiser-Caffrey)
+- Guttman-Nicewanderova (Lamda 6)
+- Lower Reliability Limit (Rho 1)
+- Upper Reliability Limit (Rho 2)
+- Momirovic's Lower Reliability Limit (Tau)
+- Measure of homogeneity based on the average correlation between item (Hom 1)
+- Measure of homogeneity based on the number of principal components whose variance is greater than or equal to 1 (Hom 2)
+- Momirović's homogeneity coefficient (Hom 3)
+- Kaiser - Rice representativeness coefficient (MSA)
+- Item - Statistics
+- Internal Validity
+
+Column {data-width=690 .tabset}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+### Data Summary
+
+```{r}
+summary
+```
+
+### Z - values
+
+```{r}
+DT::datatable(Z, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel'))) %>% formatRound(colnames(Z), digits=3)
+```
+
+### Harris - values
+
+```{r}
+DT::datatable(HA, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel'))) %>% formatRound(colnames(HA), digits=3)
+```
+
+### Condensed data
+
+```{r}
+DT::datatable (K_data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel'))) %>% formatRound(colnames(K_data), digits=3)
+```
+
+Descriptive Statistics
+=======================================================================
+
+Column {data-width=50}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Descriptive Statistics
+
+```{r}
+DT::datatable (ds, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Graph Analysis
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio", 
+                       label = "Select Variable:",
+                       choices = colnames(my_data)),
+          
+            sliderInput("bins",
+                        "Broj razreda:",
+                        min = 1,
+                        max = 100,
+                        value = 7)
+        ),
+        mainPanel(
+          h4("Normality Test (Shapiro-Wilk)"),
+          textOutput("shapiro"),
+          hr(),
+          h4("Histogram"),
+          plotOutput("histogram"),
+          hr(),
+          h4("Box and Whiskers Plot"),
+          plotOutput("box")
+          )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        my_data[, input$radio]
+  })
+     
+      output$shapiro <- renderText({ 
+        w <- selectedData()
+        sw <- shapiro.test(w)
+        W <- round(sw$statistic, digits = 3)
+        p <- round(sw$p.value, digits = 3)
+        paste("W = ", W,", p = ", p)
+  })
+      
+       output$histogram <- renderPlot({
+        x <- selectedData()
+        ggplot(my_data, aes(x=x)) + 
+        geom_histogram(bins=input$bins, color="#000000", fill="#8ecae6") +
+        labs(x= input$radio) +
+        theme_minimal()
+       })
+      
+       output$box <- renderPlot({
+        x <- selectedData()
+         ggplot(my_data, aes(x=x, y=0)) +
+         geom_boxplot(fill='#8ecae6', outlier.colour="#d64045", outlier.shape=16, outlier.size=2) +
+         labs(x = input$radio) +
+         theme_minimal()
+       })   
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+Metric Characteristics
+=======================================================================
+
+Column {data-width=50}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Correlation Matrix
+
+```{r}
+DT::datatable (R, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(R), digits=2)
+```
+
+### p - value
+
+```{r}
+DT::datatable (P, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(P), digits=4) %>% formatStyle(varijable, color = styleInterval(c(0.05), c('red', 'black')))
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Metric Characteristics of Measuring Instruments
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(h4("Intraclass Correlation"),
+      radioButtons("model", "Model:",
+                   c("Oneway" = "one",
+                     "Twoway" = "two")),
+      radioButtons("type", "Type:",
+                   c("Consistency" = "con",
+                     "Agreement" = "agr")),
+      radioButtons("unit", "Unit:",
+                   c("Average" = "ave",
+                     "Single" = "sin")),
+        
+        mainPanel(
+           htmlOutput("icc"),
+            hr(),
+           h4("Reliability"),
+           h5("Cronbach's = ", round(Cronbach, digits = 2)),
+           h5("Spearman-Brown = ", round(SB, digits = 2)), 
+           h5("Kaiser-Caffrey = ", round(KC, digits = 2)), 
+           h5("Lamda 1 = ", round(LAMDA1, digits = 2)), 
+           h5("Lamda 6 = ", round(LAMDA6, digits = 2)),
+           h5("Rho 1 = ", round(RHO1, digits = 2)), 
+           h5("Rho 2 = ", round(RHO2, digits = 2)),
+           h5("Rho 4 = ", round(RHO4, digits = 2)),
+           h5("Rho 5 = ", round(RHO5, digits = 2)),
+           h5("Tau = ", round(TAU, digits = 2)),
+            hr(),
+           h4("Homogeneity"),
+           h5("Hom 1 = ", round(HOM1, digits = 2)),
+           h5("Hom 2 = ", round(HOM2, digits = 2)),
+           h5("Hom 3 = ", round(HOM3, digits = 2)), 
+           hr(),
+            h4("Representativeness"),
+           h5("MSA = ", round(MSA, digits = 2)), 
+            hr(),
+           h4("Item - Statistics"),
+           dataTableOutput("IS"),
+            hr(),
+           h4("Internal Validity"),
+           dataTableOutput("IV"),
+            hr(),
+           h5("Legend:"),
+           h6("Cronbach's - Cronbachov koeficijent pouzdanosti (Cronbach, 1951)"),
+           h6("Spearman-Brown - Spearman-Brownov koeficijent pouzdanosti"),
+           h6("Kaiser-Caffrey - Kaiser-Caffreyev koeficijent pouzdanosti (Kaiser i Caffrey, 1965)"),
+           h6("Lamda 1 - Guttmanova apsolutna donja granica pouzdanosti"),
+           h6("Lamda 6 - Guttman-Nicewanderova koeficijent pouzdanosti (Nicewander, 1975)"),
+           h6("Rho 1 - donja granica pouzdanosti  (Momirović, Dobrić, 1976)"),
+           h6("Rho 2 - gornja granica pouzdanosti (Zakrajšek, Momirović, Dobrić, 1977)"),
+           h6("Rho 4 - donja granica pouzdanosti određena na temelju mirror image modela (Momirović, Gredelj, 1980)"),
+           h6("Rho 5 - gornja granica pouzdanosti određena na temelju mirror image modela (Momirović, Gredelj, 1980)"),
+           h6("Tau - Momirovićeva donja granica pouzdanosti (Momirović, 1975)"),
+           h6("MSA - Kaiser - Riceov koeficijent reprezentativnost (Kaiser, Rice, 1974)"),
+           h6("Hom1 - Mjera homogenosti na temelju prosječne korelacije između čestica"),
+           h6("Hom 2 - Mjera homogenosti  koja se temelji na broju glavnih komponenata čija je varijanca veća ili jednaka 1 (Momirović i Gredelj, 1980)"),
+           h6("Hom 3 - Momirovićev koeficijent homogenosti (Momirović, 1977)"),
+           hr(),
+
+   )
+),
+server <- function(input, output, session) {
+  
+ output$icc <- renderText({
+    icc <- icc(my_data, 
+            model = input$model,
+            type  = input$type,
+            unit  = input$unit, 
+            r0 = 0, 
+            conf.level = 0.95)
+            paste(
+              "Intraclass Corr. Coeff. (ICC) = ", round(icc$value, digits = 2), "; F-value =", round(icc$Fvalue, digits = 2), "; p - value = ",    round(icc$p.value, digits = 3), "</br>",
+              "95% Conf. Interval for ICC =", round(icc$lbound,digits = 2),  " ~ ", round(icc$ubound, digits = 2)
+              )
+   })
+  output$IS <- renderDataTable({
+    IS%>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = 100, dom = 'Bt',buttons = c('copy')))
+ })
+output$IV <- renderDataTable({
+    IV%>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = 100, dom = 'Bt',buttons = c('copy')))
+ })
+
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
