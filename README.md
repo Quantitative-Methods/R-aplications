@@ -54,7 +54,7 @@ The R - aplications repository contains R Markdown program files (applications) 
 - Harris Metric
 - Image Metric
 
-## 7 - Correlation Analysis:
+## 7 - Correlation Analysis.Rmd
 - Pearson product-moment correlation coefficient
 - Spearman's rank correlation coefficient
 - Kendall tau correlation coefficient
