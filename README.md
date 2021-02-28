@@ -47,12 +47,6 @@ The R - aplications repository contains R Markdown program files (applications) 
 
 ### Confidence Intervals for the Population Mean
 
-### Correlation Analysis:
-- Correlation Matrix
-- P -value
-- Scatter Plot
-- Correlation Network
-
 ## 3 - Data Transformation.Rmd
 - Z -value
 - T - value
