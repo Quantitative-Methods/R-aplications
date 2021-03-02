@@ -252,7 +252,7 @@ server <- function(input, output, session) {
       output$histogram <- renderPlot({
         x <- selectedData()
         ggplot(numeric, aes(x=x)) + 
-        geom_histogram(bins=input$bins, color="#000000", fill="#8ecae6") +
+        geom_histogram(bins=input$bins, color="#000000", fill="#5BC0DE") +
         labs(x= input$radio) +
         theme_minimal()
        })
@@ -477,7 +477,7 @@ server <- function(input, output, session) {
           axis(side = 1, at = axis_bounds, pos = 0)
           a <- seq(x1,x2,length=2000)
           b <- dnorm(x, mean=as, sd=sd)
-          polygon(c(x1, a, x2), c(0, b, 0), col="#8ecae6")
+          polygon(c(x1, a, x2), c(0, b, 0), col="#5BC0DE")
       }) 
        
 },
