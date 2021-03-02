@@ -1,7 +1,8 @@
 ###################
 # Install Package #
 ###################
-
+remove.packages("rmarkdown")
+install.packages("https://cran.r-project.org/src/contrib/Archive/rmarkdown/rmarkdown_2.5.tar.gz", repos=NULL, type='source')
 install.packages("flexdashboard")
 install.packages("shiny")
 install.packages("tidyverse")
@@ -22,4 +23,3 @@ install.packages("GPArotation")
 install.packages("yacca")
 install.packages("candisc")
 install.packages("irr")
-
