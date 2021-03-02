@@ -161,7 +161,7 @@ server <- function(input, output, session) {
       output$graf1 <- renderPlot({
         var    <- selectedData()
         ggplot(data, aes(x=var)) + 
-        geom_bar (color="#000000", fill="#8ecae6")+
+        geom_bar (color="#000000", fill="#5BC0DE")+
         labs(x= input$radio, y = "Frequency") +
         theme_classic()
         
