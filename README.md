@@ -3,7 +3,7 @@ The R - aplications repository contains R Markdown program files (applications) 
 
 ## 1 - Frequency Tables.Rmd
 
-### Frequency Tables
+### Frequency Tables:
 - Frequency
 - Relative frequency (Percent)
 - Cumulative frequencies (Cumulative) 
@@ -11,7 +11,7 @@ The R - aplications repository contains R Markdown program files (applications) 
 - Chi-square Test
 - Graph
 
-### Contingency Tables
+### Contingency Tables:
 - Frequency
 - Percent
 - Chi-square Test
