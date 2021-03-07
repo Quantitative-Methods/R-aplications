@@ -43,7 +43,7 @@ The R - aplications repository contains R Markdown program files (applications) 
 - Box and Whiskers Plot
 - Q-Q Plot
 
-### Probability Calculator fot Normal (Gauss) Distribution
+### Probability Calculator for Normal (Gauss) Distribution
 
 ### Confidence Intervals for the Population Mean
 
@@ -55,6 +55,31 @@ The R - aplications repository contains R Markdown program files (applications) 
 - Image Metric
 
 ## 4 - Independent Samples T-Test.Rmd
+
+### Descriptives parameters:
+- Arithmetic mean (MEAN)
+- Median (MEDIAN)
+- Standard deviation (SD)
+- Minimum (MIN)
+- Maximum (MAX)
+- Range (RANGE)
+- Skewness (SKEW),
+- Kurtosis (KURT)
+
+### T - test:
+- Arithmetic mean of the first group (MEAN1)
+- Arithmetic mean of the second group (MEAN2)
+- Standard error of the difference between means (SED)
+- t - value (T)
+- Degrees of freedom (DF)
+- p - value (P)
+- Confidence Intervals for t -value (CI 95%)
+- F - value (F)
+- p-value (P)
+- Shapiro-Wilk test
+- Homogeneity of Variances Test (Levene's)
+- Histogram
+- Box and Whiskers Plot
 
 ## 5 - Dependent Samples T-Test.Rmd
 
