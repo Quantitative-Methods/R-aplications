@@ -80,6 +80,7 @@ The R - aplications repository contains R Markdown program files (applications) 
 - Homogeneity of Variances Test (Levene's)
 - Histogram
 - Box and Whiskers Plot
+- Mean Plot with 95% Confidence Interval
 
 ## 5 - Dependent Samples T-Test.Rmd
 
