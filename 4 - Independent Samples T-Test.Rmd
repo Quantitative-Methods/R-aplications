@@ -26,8 +26,8 @@ library(RVAideMemoire)
 library(skimr)
 ```
 
-```{r Učitavanje podataka iz CSV datoteke}
-setwd("~/R-aplikacije/Datoteke/CSV")
+```{r}
+#setwd("~/R-aplikacije/Datoteke/CSV")
 #data <- read.table(file = "UCENICI.csv",
 
 data <- read.table(file.choose(),                  
@@ -37,11 +37,9 @@ data <- read.table(file.choose(),
                    stringsAsFactors = TRUE,
                    row.names = 1)
 
-#saveRDS(data, file = "UCENICI.RData") 
-#head(data)
 ```
 
-```{r Selekcija vaijabli}
+```{r}
 Selektor <- data %>% select(KRAJ)
 #Dependent <- data %>% select(ATV, ATT, AOP, ANN, MKUS, MPOL, MP20, MPRR, MTAP, MSDM, MDTR, MVIS)
 Factor <- data %>% select_if(is.factor)
