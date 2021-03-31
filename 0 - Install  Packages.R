@@ -1,7 +1,7 @@
 ###################
 # Install Package #
 ###################
-remove.packages("rmarkdown")
+#remove.packages("rmarkdown")
 install.packages("https://cran.r-project.org/src/contrib/Archive/rmarkdown/rmarkdown_2.5.tar.gz", repos=NULL, type='source')
 install.packages("flexdashboard")
 install.packages("shiny")
