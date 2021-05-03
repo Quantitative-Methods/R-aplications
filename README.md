@@ -94,3 +94,5 @@ The R - aplications repository contains R Markdown program files (applications) 
 - P -value
 - Scatter Plot
 - Correlation Network
+
+## 8 - Regression Analysis.Rmd
