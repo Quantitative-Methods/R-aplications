@@ -208,7 +208,7 @@ valueBox(n*m)
 ```
 
 
-Column {data-width=800 .tabset}
+Column {data-width=700 .tabset}
 -----------------------------------------------------------------------
 
 ### Data
@@ -229,7 +229,7 @@ summary
 DT::datatable(ZK, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
 ```
 
-Column {data-width=200 .tabset}
+Column {data-width=300 .tabset}
 -----------------------------------------------------------------------
 
 ### Predicted Values
