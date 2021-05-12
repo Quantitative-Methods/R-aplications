@@ -96,3 +96,5 @@ The R - aplications repository contains R Markdown program files (applications) 
 - Correlation Network
 
 ## 8 - Regression Analysis.Rmd
+
+## 9 - Factor Analysis.Rmd
