@@ -27,24 +27,18 @@ library(ggthemes)
 
 ```{r Učitavanje podataka iz CSV datoteke}
 
-setwd("~/R-aplikacije/Datoteke/CSV")
+#setwd("~/R-aplikacije/Datoteke/CSV")
 
-data <- read.table(file = "JUDO3F.csv",               
-#data <- read.table(file.choose(),                  
+data <- read.table(file.choose(),                  
                    header = TRUE,                      
                    dec = ",",                          
                    sep = ";",                          
                    stringsAsFactors = TRUE,
                    row.names = 1)
-
-#saveRDS(data, file = "JUDO3F.RData") 
-#head(data)
 ```
-
 ```{r Selekcija varijabli}
 numeric <- data %>% select_if(is.numeric)
 ```
-
 ```{r}
 varijable <- names(numeric)
 n <- nrow(numeric)                                  
