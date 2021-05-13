@@ -27,8 +27,8 @@ library(ggthemes)
 
 ```{r}
 
-setwd("~/R-aplikacije/Datoteke/CSV")
-#data <- read.table(file = "JUDO3F.csv", 
+#setwd("~/R-aplikacije/Datoteke/CSV")
+
 data <- read.table(file.choose(),                  
                    header = TRUE,                      
                    dec = ",",                          
