@@ -1,0 +1,727 @@
+---
+title: "Factor Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    #theme: bootstrap
+    #theme: cerulean
+    #theme: flatly
+    #theme: united
+    #theme: simplex
+    theme: yeti
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(nortest)
+library(rstatix)
+library(corrr)
+library(skimr)
+library(ggthemes)
+```
+
+```{r}
+
+setwd("~/R-aplikacije/Datoteke/CSV")
+#data <- read.table(file = "JUDO3F.csv", 
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+
+numeric <- data %>% select_if(is.numeric)
+varijable <- names(numeric)
+n <- nrow(numeric)                                  
+m <- ncol(numeric)
+summary <- skim(data)
+fnames <- c("F1", "F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","F13","F14","F15","F16","F17","F18","F19","F20")
+Z <- round(scale(numeric), digits = 2)
+```
+
+
+Data
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+Column {data-width=990 .tabset}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+### Data Summary
+
+```{r}
+summary
+```
+
+### Z - value
+
+```{r}
+DT::datatable(Z, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+
+Descirptive Statistics
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+Column {data-width=990 .tabset}
+-----------------------------------------------------------------------
+
+### Descirptive Parameters
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+        ),
+        mainPanel(
+          dataTableOutput("desc"),
+          hr(),
+           h5("Legend:"),
+           h6("- Arithmetic mean (MEAN)"),
+           h6("- Median (MEDIAN)"),
+           h6("- Standard deviation (SD)"),
+           h6("- Coefficient of Variation (CV)"),
+           h6("- Minimum (MIN)"),
+           h6("- Maximum (MAX)"),
+           h6("- Range (RANGE)"),
+           h6("- Skewness (SKEW)"),
+           h6("- Kurtosis (KURT)"),
+           h6("- Standard error of the mean (SEM)"),
+          )
+),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+    
+  output$desc <- renderDataTable({
+    my_data <- selectedData()
+    dp <- describe(my_data, type=3)
+    kv <- dp$sd/dp$mean*100
+    dp <- cbind(dp,kv)
+    dp <- dp[c(3, 5, 4, 14, 8, 9, 10, 11, 12, 13)]
+    colnames(dp) <- c("MEAN", "MEDIAN", "SD", "CV", "MIN", "MAX", "RANGE", "SKEW", "KURT", "SEM")
+    dp <- round(dp, digits = 3)
+    dp %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+  })
+  
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+### Testing for Normality 
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio", 
+                       label = "Select Variable:",
+                       choices = colnames(numeric)),
+          
+            sliderInput("bins",
+                        "Number of Bins:",
+                        min = 1,
+                        max = 100,
+                        value = 7)
+        ),
+        mainPanel(
+          h4("Normality Test"),
+          textOutput("ks"),
+          textOutput("lks"),
+          textOutput("ad"),
+          textOutput("sf"),
+          textOutput("sw"),
+          hr(),
+          h4("Histogram"),
+          plotOutput("histogram"),
+          hr(),
+          h4("Box and Whiskers Plot"),
+          plotOutput("box"),
+          hr(),
+          h4("Q-Q Plot"),
+          plotOutput("qq")
+          )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        numeric[, input$radio]
+  })
+      output$ks <- renderText({ 
+        x <- selectedData()
+        ks <- ks.test(x, "pnorm", mean=mean(x), sd=sd(x))
+        D <- round(ks[["statistic"]][["D"]], digits = 3)
+        pks <- round(ks[["p.value"]], digits = 3)
+        paste("Kolmogorov-Smirnov test:", "D = ", D,", p = ", pks)
+  })       
+      output$lks <- renderText({ 
+        x <- selectedData()
+        lt <- lillie.test(x)
+        Dlks <- round(lt[["statistic"]][["D"]], digits = 3)
+        plks <- round(lt[["p.value"]], digits = 3)
+        paste("Lilliefors test:", "D = ", Dlks,", p = ", plks)
+  })   
+      output$ad <- renderText({ 
+        x <- selectedData()
+        ad <- ad.test(x)
+        A <- round(ad[["statistic"]][["A"]], digits = 3)
+        pa <- round(ad[["p.value"]], digits = 3)
+        paste("Anderson-Darling test:", "A = ", A,", p = ", pa)
+  })   
+      output$sf <- renderText({ 
+        x <- selectedData()
+        sf <- sf.test(x)
+        Wsf <- round(sf[["statistic"]][["W"]], digits = 3)
+        psf <- round(sf[["p.value"]], digits = 3)
+        paste("Shapiro-Francia test:", "W = ", Wsf,", p = ", psf)
+  }) 
+      output$sw <- renderText({ 
+        x <- selectedData()
+        sw <- shapiro.test(x)
+        W <- round(sw$statistic, digits = 3)
+        psw <- round(sw$p.value, digits = 3)
+        paste("Shapiro-Wilk test:", "W = ", W,", p = ", psw)
+        
+  })
+      output$histogram <- renderPlot({
+        x <- selectedData()
+        ggplot(numeric, aes(x=x)) + 
+        geom_histogram(bins=input$bins, color="#000000", fill="#5BC0DE") +
+        labs(x= input$radio) +
+        theme_minimal()
+       })
+      
+       output$box <- renderPlot({
+        x <- selectedData()
+         ggplot(numeric, aes(x=x, y=0)) +
+         geom_boxplot(fill='#5BC0DE', outlier.colour="#d64045", outlier.shape=8, outlier.size=2) +
+         labs(x = input$radio) +
+         theme_minimal()
+       })   
+       
+       output$qq <- renderPlot({
+        x <- selectedData()
+        ggplot(numeric, aes(sample = x)) + 
+        stat_qq_line(color="#000000",size=1) + 
+        stat_qq(color="#145DA0", size=2) + 
+        labs(x = input$radio, y=input$radio) +
+        theme_minimal()
+       }) 
+        
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+
+Correlation Analysis
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+Column {data-width=990 .tabset}
+-----------------------------------------------------------------------
+
+### Correlation Analysis
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+         
+         radioButtons("method", "Method:",
+                   choices = c(Pearson = "pearson",
+                               Spearman = "spearman",
+                               Kendall = "kendall"),
+                   selected = "pearson"),
+
+        ),
+        mainPanel(
+          h4("Correlation Matrix"),
+          dataTableOutput("r"),
+            hr(),
+          h4("p - value"),
+          dataTableOutput("p"),
+          )
+),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+    
+  output$r <- renderDataTable({
+    my_data <- selectedData()
+    var_name_numeric <- names(my_data)
+    RP <- corr.test(my_data, method = input$method)
+    R <- RP$r
+    R %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(R), digits=2)
+   })
+  
+   output$p <- renderDataTable({
+    my_data <- selectedData()
+    var_name_numeric <- names(my_data)
+    RP <- corr.test(my_data, method = input$method)
+    P <- RP$p
+    P %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(P), digits=4) %>% formatStyle(var_name_numeric, color = styleInterval(c(0.05), c('red', 'black')))
+  })
+  
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+### Scatter Plot
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("xcol", 
+                       label = "Select Variable x:",
+                       choices = colnames(numeric)),
+            radioButtons("ycol", 
+                       label = "Select Variable y:",
+                       choices = colnames(numeric)),
+        ),
+        mainPanel(
+          h4("Scatter Plot"),
+          plotOutput("scatter"),
+            hr(),
+          h4("Correlation Coefficients"),
+          htmlOutput("r"),
+   )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        numeric[, c(input$xcol, input$ycol)]
+        
+  })
+      output$scatter <- renderPlot({
+        xx  <- selectedData()
+        ggplot(xx, aes(x=xx[,1], y=xx[,2])) +
+        geom_point(size=2, colour = "#145DA0") +
+        geom_smooth(method = "lm", colour = "#d64045", size=1, se = F) +
+        labs(x= input$xcol, y = input$ycol) +
+        theme_minimal()
+    })
+      
+      output$r <- renderText({ 
+        xx <- selectedData()
+        x <- xx[,1]
+        y <- xx[,2]
+        r <- round(cor(x, y, method = "pearson"), digits = 2)
+        rho <- round(cor(x, y, method = "spearman"), digits = 2)
+        tau <- round(cor(x, y, method = "kendall"), digits = 2)
+        pr <- cor.test(x, y, method = "pearson")
+        pr <- round(pr$p.value, digits = 3)
+        prho <- cor.test(x, y, method = "spearman")
+        prho <- round(prho$p.value, digits = 3)
+        ptau <- cor.test(x, y, method = "kendall")
+        ptau <- round(ptau$p.value, digits = 3)
+        paste(
+              "Pearson r = " , r, ", p =", pr, "</br>",
+              "Spearman rho = ", rho, ", p =", prho, "</br>",
+              "Kendell tau = ", tau, ", p =", ptau
+              )
+  })
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+### Correlation Network
+
+```{r}
+
+shinyApp(
+  
+ui <- fluidPage(
+            sidebarPanel(
+              checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+              sliderInput("r",
+                        "Correlation Coefficient Level:",
+                        min = 0,
+                        max = 1,
+                        value = 0.35),
+     ),
+        mainPanel(
+           h4("Correlation Network"),
+           plotOutput("corPlot")
+       ),
+),
+server <- function(input, output, session) {
+  
+    selectedData <- reactive({
+    data[, input$select_vars]
+  })    
+  
+    output$corPlot <- renderPlot({
+    my_data <- selectedData()
+    my_data %>% correlate() %>% network_plot(min_cor=input$r)
+    })
+},
+shinyApp(ui = ui, server = server)
+)
+
+```
+
+
+Factor Analysis
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Factor Analysis
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+         
+         sliderInput("k",
+                        "Number Principal Components:",
+                        step = 1,
+                        min = 1,
+                        max = m,
+                        value = 1),
+         
+         radioButtons("method", "Rotated Principal Components:",
+                   choices = c(none = "none",
+                               varimax = "varimax",
+                               quartimax = "quartimax",
+                               obimin = "oblimin",
+                               promax = "promax"
+                               ),
+                   selected = "none"),
+
+        ),
+        mainPanel(
+          h4("Eigenvalue"),
+          dataTableOutput("Lamda"),
+          textOutput("ssmc"),
+            hr(),
+          h4("Scree Plot (GK-criterion)"),
+          plotOutput("spgk"),
+             hr(),
+          h4("Communality"),
+          dataTableOutput("H"),
+            hr(),
+          h4("Pattern Matrix"),
+          dataTableOutput("A"),
+             hr(),
+          h4("Structure Matrix"),
+          dataTableOutput("FF"),
+             hr(),
+          h4("Factor Correlation Matrix"),
+          dataTableOutput("M"),
+             hr(),
+          h4("Graph Factor Loadings (Variables)"),
+          plotOutput("GFF1"),
+             hr(),
+          h4("Graph Factor Loadings (Factors)"),
+          plotOutput("GFF2")
+        )
+),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+
+  output$Lamda <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    Eigenvalue <- fit$values
+    Cum.Eign <- cumsum(Eigenvalue)
+    Percentage <- Eigenvalue/sum(Eigenvalue)*100
+    Cum.Per <- cumsum(Percentage)
+    Lamda <- cbind(Eigenvalue, Cum.Eign, Percentage, Cum.Per)
+    rownames(Lamda) <- 1:mm
+    R <- cor(my_data)
+    SMC <- 1-(1/diag(solve(R)))
+    j <- rep(1,mm)
+    SSMC<- SMC %*% j
+    ssmc <- SSMC[1,1]
+    Lamda %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = mm, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(Lamda), digits=3) %>% formatStyle('Eigenvalue', fontWeight = styleInterval(1, c('normal', 'bold'))) %>% formatStyle('Cum.Eign', fontWeight = styleInterval(ssmc, c('bold','normal')))
+    })
+
+  output$ssmc <- renderText({ 
+     my_data <- selectedData()
+     mm <- ncol(my_data)
+     R <- cor(my_data)
+     SMC <- 1-(1/diag(solve(R)))
+     j <- rep(1,mm)
+     SSMC<- SMC %*% j
+     ssmc <- SSMC[1,1]
+     paste("Sum SMC =", round(ssmc, digits = 3))
+     })
+     
+  output$spgk <- renderPlot({
+    my_data <- selectedData()
+    scree(my_data, factors=FALSE, pc=TRUE, main="") 
+  })
+  
+   output$H <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    h2 <- fit$communality
+    u2 <- fit$uniquenesses
+    R <- cor(my_data)
+    SMC <- 1-(1/diag(solve(R)))
+    h <- cbind(h2,u2,SMC)
+    h %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = mm, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(h), digits=3)
+    })
+    
+  output$A <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    Complexity <- fit$complexity
+    A <- fit$loadings
+    colnames(A) <- fnames[1:input$k]
+    A <- cbind(A,Complexity)
+    A %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = mm, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(A), digits=3)
+   })
+
+   output$FF <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    Complexity <- fit$complexity
+    FF <- fit$Structure
+    colnames(FF) <- fnames[1:input$k]
+    FF <- cbind(FF,Complexity)
+    FF %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = mm, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(FF), digits=3)
+   })
+  
+  output$M <- renderDataTable({
+    my_data <- selectedData()
+    fit <- principal(my_data, nfactors=input$k, rotate = input$method)
+    M <- cor(fit$scores)
+    colnames(M) <- fnames[1:input$k]
+    rownames(M) <- fnames[1:input$k]
+    M %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = input$k, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(M), digits=3)
+   })
+  
+      
+  output$GFF1 <- renderPlot({
+    my_data <- selectedData()
+    var_names <- names(my_data)
+    mm <- ncol(my_data)
+    Faktori <- fnames[1:input$k]
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    F1 <- fit$loadings*fit$loadings
+    Fac <- rep(Faktori, each=mm)
+    Var <- rep(var_names, times=input$k)
+    Loa1 <- c()
+    for (a in 1:input$k) {Loa1 <- c(Loa1,F1[,a])}
+    FF1 <- data_frame(Fac,Var,Loa1)
+    
+    ggplot(data=FF1, aes(x=Var,y=Loa1,fill=Fac)) +
+      geom_bar(position ="stack",stat="identity") +
+      labs(x ="Variables",y ="Loadings",fill ="Factors",title= "") +
+      theme_minimal() + scale_fill_ptol()
+  })
+  
+  output$GFF2 <- renderPlot({
+    my_data <- selectedData()
+    var_names <- names(my_data)
+    mm <- ncol(my_data)
+    Faktori <- fnames[1:input$k]
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    F1 <- fit$loadings*fit$loadings
+    Fac <- rep(Faktori, each=mm)
+    Var <- rep(var_names, times=input$k)
+    Loa1 <- c()
+    for (a in 1:input$k) {Loa1 <- c(Loa1,F1[,a])}
+    FF1 <- data_frame(Fac,Var,Loa1)
+    
+    ggplot(data=FF1, aes(x=Fac,y=Loa1,fill=Var)) +
+      geom_bar(position ="stack",stat="identity") +
+      labs(x ="Factors",y ="Loadings",fill ="Variables",title= "") +
+      theme_minimal() + scale_fill_ptol()
+  })
+  
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+Column {data-width=390}
+-----------------------------------------------------------------------
+
+### Factor Scores
+
+```{r}
+
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+         
+         sliderInput("k",
+                        "Number Principal Components:",
+                        step = 1,
+                        min = 1,
+                        max = m,
+                        value = 1),
+         
+         radioButtons("method", "Rotated Principal Components:",
+                   choices = c(none = "none",
+                               varimax = "varimax",
+                               quartimax = "quartimax",
+                               obimin = "oblimin",
+                               promax = "promax"
+                               ),
+                   selected = "none"),
+
+        ),
+        mainPanel(
+          h4("Factor Scores"),
+          dataTableOutput("Scores")
+          )
+),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+
+  output$Scores <- renderDataTable({
+    my_data <- selectedData()
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    FS <- fit$scores
+    colnames(FS) <- fnames[1:input$k]
+    FS %>% DT::datatable (rownames = TRUE, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(FS), digits=3)
+   })
+  
+},
+
+shinyApp(ui = ui, server = server)
+)
+
+```
+
