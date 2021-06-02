@@ -23,16 +23,12 @@ library(skimr)
 
 ```{r Učitavanje podataka iz CSV datoteke}
 
-#data <- read.table(file = "UCENICI_OS.csv",
 data <- read.table(file.choose(),                  
                    header = TRUE,                      
                    dec = ",",                          
                    sep = ";",                          
                    stringsAsFactors = TRUE,
                    row.names = 1)
-
-#saveRDS(data, file = "my_data.RData") 
-#head(data)
 ```
 
 ```{r Selekcija varijabli za deskriptivnu analizu}
