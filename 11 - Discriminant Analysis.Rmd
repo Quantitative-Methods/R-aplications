@@ -1,0 +1,420 @@
+---
+title: "Discriminant Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    #theme: bootstrap
+    #theme: cerulean
+    #theme: flatly
+    #theme: united
+    #theme: simplex
+    theme: yeti
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(candisc)
+library(DT)
+library(skimr)
+```
+
+```{r Učitavanje podataka iz CSV datoteke}
+
+#data <- read.table(file = "UCENICI_OS.csv",
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+
+#saveRDS(data, file = "my_data.RData") 
+#head(data)
+```
+
+```{r Selekcija varijabli za deskriptivnu analizu}
+
+Selektor <- data %>% select(RAZRED)
+Dependent <- data %>% select(ATV, ATT, AOP, ANN, MKUS, MPOL, MP20, MPRR, MTAP, MSDM, MDTR, MVIS)
+#Dependent <- data %>% select_if(is.numeric)
+```
+
+```{r Selekcija varijabli za diskriminacijsku analizu}
+
+var_disc <- lm(cbind(ATV, ATT, AOP, ANN, MKUS, MPOL, MP20, MPRR, MTAP, MSDM, MDTR, MVIS) ~ RAZRED, data = data)
+```
+
+```{r}
+cd_candisc <- candisc(var_disc, data = data)
+w <- Wilks(cd_candisc)
+```
+
+```{r}
+summary <- skim(data)
+Varijable <- names(Dependent)
+Grupe <- names(Selektor)
+Z1 <- round(scale(Dependent), digits = 2)
+Z <- cbind(Selektor, Z1)
+m <- ncol(Dependent)
+n <- nrow(Dependent)
+my_data <- cbind(Selektor, Dependent)
+f <- table(cd_candisc$factors)
+as <- aggregate(my_data[,1:m+1], list(my_data[,1]), mean)
+as <- round (as[1:m+1], digits=2)
+sd <- aggregate(my_data[,1:m+1], list(my_data[,1]), sd)
+sd <- round (sd[1:m+1], digits=2)
+f <- data.frame(f)
+colnames(f) <- c(cd_candisc$term, "N")
+as <- cbind(f, data.frame(as))
+sd <- cbind(f, data.frame(sd))
+```
+
+```{r}
+k <- cd_candisc$ndim
+dfnames <- c("DF1","DF2","DF3","DF4","DF5","DF6","DF7","DF8","DF9","DF10")
+Faktori <- dfnames[1:k]
+df1 <- cd_candisc$scores[1]
+df2 <- cd_candisc$scores[1:k+1]
+df2 <- round(df2, digits = 3)
+DF <- cbind(df1, df2)
+colnames(DF) <- c(cd_candisc$term, dfnames[1:k])
+DF <- data.frame(DF)
+```
+
+```{r}
+Eigenval <- round(cd_candisc$eigenvalues, digits = 3)
+Canonical_corr <- round(sqrt((cd_candisc$canrsq)), digits = 3)
+Percent_var <- round(cd_candisc$pct, digits = 3)
+Wilks_lam <- round(w$`LR test stat`, digits = 3)
+p_value <- round(w$`Pr(> F)`, digits = 3)
+Tab2 <- cbind(Eigenval, Canonical_corr, Percent_var, Wilks_lam, p_value)
+Tab2 <- data.frame(Tab2)
+colnames(Tab2) <- c("Eigen.", "Can. corr.", "Percent var.", "Wilks lam.", "p-level")
+Tab2<- Tab2[1:k,]
+```
+
+```{r}
+FDF <- round(cd_candisc$structure, digits = 3)
+colnames(FDF) <- dfnames[1:k]
+FDF <- data.frame (FDF)
+```
+
+```{r}
+Cent <- round(cd_candisc$means, digits = 3)
+Cent <- data.frame(Cent)
+colnames(Cent) <- dfnames[1:k]
+Cent <- cbind.data.frame(f, Cent)
+```
+
+```{r}
+Fac <- rep(Faktori, each=m)
+Var <- rep(Varijable, times=k)
+L <- c()
+for (a in 1:k) {L <- c(L,FDF[,a])}
+FF <- data_frame(Fac,Var,L)
+
+```
+
+```{r}
+GFF1 <- ggplot(data=FF, aes(x=Var,y=L,fill=Fac)) +
+  geom_bar(position ="stack",stat="identity") +
+  labs(x ="Variables",y ="Loadings",fill ="Discriminant Function",title= "")+
+  theme_minimal()
+
+GFF2 <- ggplot(data=FF, aes(x = Fac,y=L ,fill=Var)) +
+  geom_bar(position ="stack",stat="identity") +
+  labs(x ="Discriminant Function",y ="Loadings",fill ="Variables",title= "")+
+  theme_minimal()
+```
+
+
+Data
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+### Group
+
+```{r}
+valueBox(k+1)
+```
+
+Column {data-width=200}
+-----------------------------------------------------------------------
+
+### Discriminant Analysis
+
+
+Column {data-width=690 .tabset}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+### Data Summary
+
+```{r}
+summary
+```
+
+### Z - value
+
+```{r}
+DT::datatable(Z, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Discriminant Function
+
+```{r}
+DT::datatable(DF, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+
+Descriptive Statistics
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+### Group
+
+```{r}
+valueBox(k+1)
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Means
+
+```{r}
+DT::datatable (as, rownames=FALSE, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+```
+
+### Standard Deviations
+
+```{r}
+DT::datatable (sd, rownames=FALSE, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+```
+
+
+Column {data-width=490}
+-----------------------------------------------------------------------
+
+### Box and Whiskers Plot
+
+```{r}
+
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio1", 
+                       label = "Dependent:",
+                       choices = colnames(Dependent)),
+           radioButtons("radio2", 
+                       label = "Selektor:",
+                       choices = colnames(Selektor)),
+          
+        ),
+        mainPanel(
+          textOutput("anova"),
+          plotOutput("box")
+          
+          
+        )
+),
+server <- function(input, output, session) {
+
+      selectedData1 <- reactive({
+        Dependent[, input$radio1]
+  })
+      selectedData2 <- reactive({   
+        Selektor[, input$radio2]
+         
+  })
+    
+      output$anova <- renderText({ 
+        varijable <- selectedData1()
+        grupa     <- selectedData2()
+        res.aov <- aov(varijable ~ grupa, data = Dependent)
+        anova <- summary(res.aov)
+        anova <- data.frame(anova[[1]])
+        Fv <-round(anova$F.value[1], digits = 2)
+        df1 <- anova$Df[1]
+        df2 <- anova$Df[2]
+        p <- round(anova$Pr..F.[1], digits = 3)
+        paste("ANOVA: F = ", Fv, ", df1 = ", df1, ", df2 = ", df2, ", p =" ,p)
+  })
+      
+      output$box <- renderPlot({
+        varijable <- selectedData1()
+        grupa     <- selectedData2()
+        ggplot(Dependent, aes(x=varijable, y=grupa, fill=grupa)) + 
+        geom_violin (color="#ffffff", alpha=0.7) +
+        geom_boxplot(color="#ffffff",outlier.colour="red",outlier.shape=8, outlier.size=4) +
+        stat_summary(fun=mean, geom="point", shape=20, size=5, color="#FFFFFF", fill="#FFFFFF") +
+        labs(title="", x = input$radio1, y = input$radio2) +
+        theme_minimal()
+       })
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+
+Discriminant Analysis
+=======================================================================
+
+Column {data-width=10}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+### Group
+
+```{r}
+valueBox(k+1)
+```
+
+Column {data-width=495 .tabset}
+-----------------------------------------------------------------------
+
+### Summary
+
+```{r}
+DT::datatable(Tab2, extensions = 'Buttons', options = list(dom = 'Bt', buttons = c('copy')))  %>%
+  formatStyle('p-level', color = styleInterval(c(0.05), c('red', 'black')))
+```
+
+### Structure Matrix
+
+```{r}
+DT::datatable(FDF, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bfrtip',buttons = c('copy'))) 
+```
+
+### Group Centroids
+
+```{r}
+DT::datatable(Cent, rownames = FALSE, extensions = 'Buttons', options = list(dom = 'Bfrtip',buttons = c('copy'))) 
+```
+
+Column {data-width=495}
+-----------------------------------------------------------------------
+
+### Structure Discriminant Functions
+
+```{r}
+GFF2
+```
+
+### Discriminant Functions at Group Centroids
+
+```{r}
+
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio1", 
+                       label = "Discriminant Functions:",
+                       choices = colnames(DF[1:k+1])),
+           radioButtons("radio2", 
+                       label = "Selector:",
+                       choices = colnames(Selektor)),
+          
+        ),
+        mainPanel(
+          plotOutput("box")
+          
+        )
+),
+server <- function(input, output, session) {
+
+      selectedData1 <- reactive({
+        DF[, input$radio1]
+        
+  })
+      selectedData2 <- reactive({   
+        Selektor[, input$radio2]
+         
+  })
+     
+      output$box <- renderPlot({
+        funkcija <- selectedData1()
+        grupa     <- selectedData2()
+        ggplot(DF, aes(x=funkcija, y=grupa, fill=grupa)) + 
+        geom_violin (color="#ffffff", alpha=0.7) +
+        geom_boxplot(color="#ffffff",outlier.colour="red",outlier.shape=8, outlier.size=4) +
+        stat_summary(fun=mean, geom="point", shape=20, size=5, color="#FFFFFF", fill="#FFFFFF") +
+        labs(title="", x = input$radio1, y = input$radio2) +
+        theme_minimal()
+       })
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+

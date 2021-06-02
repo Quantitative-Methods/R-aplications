@@ -1,0 +1,482 @@
+---
+title: "Reliability Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    #theme: bootstrap
+    #theme: cerulean
+    theme: flatly
+    #theme: united
+    #theme: simplex
+    #theme: yeti
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(rstatix)
+library(corrr)
+library(tigerstats)
+library(skimr)
+```
+
+```{r Učitavanje podataka iz CSV datoteke}
+
+setwd("~/R-aplikacije/Datoteke/CSV")
+
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+```
+
+```{r Selekcija varijabli}
+#my_data <- data %>% select_if(is.numeric)
+#my_data <- data %>% select(FEDSM1, FEDSM2, FEDSM3)
+#my_data <- data %>% select(BFPTAP1, BFPTAP2, BFPTAP3)
+#my_data <- data %>% select(FLPRR1,	FLPRR2,	FLPRR3)
+my_data <- data %>% select(AGKUS1, AGKUS2, AGKUS3)
+```
+
+```{r}
+n <- nrow(my_data)                                  
+m <- ncol(my_data)
+summary <- skim(data)
+Z <- round(scale(my_data), digits = 3)
+```
+
+```{r}
+X <- as.matrix(my_data)                    
+i <- rep(c(1), times=m)                     
+Xs <- X %*% i                               
+Xas <- Xs/m                                 
+colnames(Xs) <- c("X-sum")
+colnames(Xas) <- c("X-mean")
+Xas <- as.data.frame(Xas)
+```
+
+```{r}
+Zm <- as.matrix(Z)                    
+Zs <- Zm %*% i                               
+Zas <- Zs/m                                 
+colnames(Zs) <- c("Z-sum")
+colnames(Zas) <- c("Z-mean")
+Zas <- as.data.frame(Zas)
+```
+
+```{r}
+k <- principal(X, nfactors=1, scores=TRUE)   
+lamda1 <- k$values[1]                         
+K1 <- k$scores
+colnames(K1) <- c("K1")
+K1<- as.data.frame(K1)
+```
+
+```{r}
+ds <- describe(my_data, type=2)
+ds <- ds[c(3,5,4,8,9,10,11,12)]
+colnames(ds) <- c("Mean", "Median", "St.dev", "Min", "Max", "Range", "Skew", "Kurt")
+ds <- round(ds, digits = 3)
+```
+
+```{r}
+RP <- corr.test(my_data)
+R <- RP$r
+P <- RP$p
+```
+
+```{r}
+svar <- sum(ds[,3]*ds[,3]) 
+varXs <- var(Xs)                             
+varZs <- var(Zs)                             
+
+Cronbach <- m/(m-1)*(1-svar/varXs)             
+SB <- m/(m-1)*(1-m/varZs)                
+KC <- m/(m-1)*(1-1/lamda1)               
+k <- (m*m-m)/2                              
+AIC<- c((sum(R)-m)/2)/k
+K_data <- cbind.data.frame(Xas, Zas, K1)
+```
+
+
+Data
+=======================================================================
+
+Column {data-width=50}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+### Cronbach's alpha
+
+```{r}
+valueBox(round(Cronbach, digits = 2))
+```
+
+### Spearman-Brown alpha
+
+```{r}
+valueBox(round(SB, digits = 2))
+```
+
+### Kaiser-Caffrey alpha
+
+```{r}
+valueBox(round(KC, digits = 2))
+```
+
+### Average item corr.
+
+```{r}
+valueBox(round(AIC, digits = 2))
+```
+
+Column {data-width=200}
+----------------------------------------------------------------------- 
+
+### Reliability Analysis
+
+
+**Central Tendency**
+
+- Arithmetic mean (Mean)
+- Median (Median)
+
+**Dispersion**
+
+- Standard deviation (St. dev.)
+- Minimum (Min)
+- Maximum (Max)
+- Range (Range)
+
+**Distribution**
+
+- Skewness (Skew)
+- Kurtosis (Kurt)
+- Shapiro-Wilk test (W, p)
+- Histogram
+- Box & Whiskers plot
+
+**Correlation**
+
+- Correlation Matrix
+- p - value
+- Scatter Plot
+- Correlation Network
+
+**Reliability**
+
+- Cronbach's alpha
+- Spearman-Brown alpha
+- Kaiser-Caffrey alpha
+
+
+Column {data-width=750 .tabset}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel')))
+```
+
+### Data Summary
+
+```{r}
+summary
+```
+
+### Z - values
+
+```{r}
+DT::datatable(Z, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel'))) %>% formatRound(colnames(Z), digits=3)
+```
+
+### Condensed data
+
+```{r}
+DT::datatable (K_data, extensions = 'Buttons', options = list(pageLength = n, dom = 'Bfrtip',buttons = c('copy','csv', 'excel'))) %>% formatRound(colnames(K_data), digits=3)
+```
+
+Descriptive Statistics
+=======================================================================
+
+Column {data-width=50}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+### Cronbach's alpha
+
+```{r}
+valueBox(round(Cronbach, digits = 2))
+```
+
+### Spearman-Brown alpha
+
+```{r}
+valueBox(round(SB, digits = 2))
+```
+
+### Kaiser-Caffrey alpha
+
+```{r}
+valueBox(round(KC, digits = 2))
+```
+
+### Average item corr.
+
+```{r}
+valueBox(round(AIC, digits = 2))
+```
+
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Descriptive Statistics
+
+```{r}
+DT::datatable (ds, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Graph Analysis
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio", 
+                       label = "Select Variable:",
+                       choices = colnames(my_data)),
+          
+            sliderInput("bins",
+                        "Broj razreda:",
+                        min = 1,
+                        max = 100,
+                        value = 7)
+        ),
+        mainPanel(
+          h4("Normality Test (Shapiro-Wilk)"),
+          textOutput("shapiro"),
+          hr(),
+          h4("Histogram"),
+          plotOutput("histogram"),
+          hr(),
+          h4("Box and Whiskers Plot"),
+          plotOutput("box")
+          )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        my_data[, input$radio]
+  })
+     
+      output$shapiro <- renderText({ 
+        w <- selectedData()
+        sw <- shapiro.test(w)
+        W <- round(sw$statistic, digits = 3)
+        p <- round(sw$p.value, digits = 3)
+        paste("W = ", W,", p = ", p)
+  })
+      output$histogram <- renderPlot({
+        x    <- selectedData()
+        mean <- mean(selectedData())
+        sd <- sd(selectedData())
+        density <- dnorm(x=x, mean=mean(x), sd=sd(x)) 
+        
+        ggplot(my_data, aes(x=x)) + 
+        geom_histogram(bins=input$bins, color="#ffffff", fill="#8ecae6") +
+        geom_line(data=my_data, aes(y=density*n*(max(x)-min(x))/input$bins), colour="#e5e5e5", size=1) +
+        labs(x= input$radio) +
+        theme_minimal()
+        
+    })
+      
+       output$box <- renderPlot({
+        Variables  <- selectedData()
+        ggplot(my_data, aes(x=Variables, y=0)) + 
+        geom_violin (fill='#8ecae6', color="#ffffff", alpha=0.7) +
+        geom_boxplot(fill='#8ecae6', color="#ffffff",outlier.colour="red",outlier.shape=8, outlier.size=4) +
+        labs(x = input$radio) +
+        theme_minimal()
+       })   
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+Correlation Analysis
+=======================================================================
+
+Column {data-width=50}
+-----------------------------------------------------------------------
+
+### Cases
+
+```{r}
+valueBox(n)
+```
+
+### Variables
+
+```{r}
+valueBox(m)
+```
+
+### Data
+
+```{r}
+valueBox(n*m)
+```
+
+### Cronbach's alpha
+
+```{r}
+valueBox(round(Cronbach, digits = 2))
+```
+
+### Spearman-Brown alpha
+
+```{r}
+valueBox(round(SB, digits = 2))
+```
+
+### Kaiser-Caffrey alpha
+
+```{r}
+valueBox(round(KC, digits = 2))
+```
+
+### Average item corr.
+
+```{r}
+valueBox(round(AIC, digits = 2))
+```
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Correlation Matrix
+
+```{r}
+DT::datatable (R, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(R), digits=2)
+```
+
+### p - value
+
+```{r}
+DT::datatable (P, extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(P), digits=4)
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Scatter Plot
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("xcol", 
+                       label = "Select Variable x:",
+                       choices = colnames(my_data)),
+            radioButtons("ycol", 
+                       label = "Select Variable y:",
+                       choices = colnames(my_data)),
+        ),
+        mainPanel(
+           h4("Scatter Plot"),
+          plotOutput("scatter"),
+   )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        my_data[, c(input$xcol, input$ycol)]
+  })
+      output$scatter <- renderPlot({
+        xx    <- selectedData()
+        ggplot(xx, aes(x=xx[,1], y=xx[,2])) +
+        geom_point(size=2, colour = "#145DA0") +
+        labs(x= input$xcol, y = input$ycol) +
+        theme_minimal()
+    })
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+### Correlation Network
+
+```{r}
+
+shinyApp(
+  
+ui <- fluidPage(
+            sidebarPanel(
+              sliderInput("r",
+                        "Correlation Coefficient Level:",
+                        min = 0,
+                        max = 1,
+                        value = 0.35),
+     ),
+        mainPanel(
+           h4("Correlation Network"),
+           plotOutput("corPlot")
+       ),
+),
+server <- function(input, output) {
+    output$corPlot <- renderPlot({
+    my_data %>% correlate() %>% network_plot(min_cor=input$r)
+    })
+},
+shinyApp(ui = ui, server = server)
+)
+
+```
+
