@@ -23,6 +23,8 @@ library(skimr)
 
 ```{r Učitavanje podataka iz CSV datoteke}
 
+#setwd("~/R-aplikacije/Datoteke/CSV")
+
 data <- read.table(file.choose(),                  
                    header = TRUE,                      
                    dec = ",",                          
