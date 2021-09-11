@@ -1,0 +1,391 @@
+---
+title: "Descriptive Statistics"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r}
+# UPUTA ZA KORIŠTENJE 
+
+# PODACI: oznake (kodovi) modaliteta kvalitativnih varijabli ne smiju biti brojevi
+# SELEKCIJA VARIJABLI: aplikacija samostalno vrši selekciju svih kvantitativnih varijabli
+```
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(gmodels)
+library(nortest)
+library(tigerstats)
+library(bslib)
+```
+
+```{r}
+setwd("~/R-aplikacije/Datoteke/CSV")
+
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+n <- nrow(data)                                  
+m <- ncol(data)
+numeric <- data %>% select_if(is.numeric)
+var_name <- names(data)
+var_name_numeric <- names(numeric)
+```
+
+Data
+=======================================================================
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, style = 'bootstrap', filter = 'top', extensions = 'Buttons', options = list(pageLength = n, dom = 'Brti', buttons = c('copy','csv', 'excel'))) 
+```
+
+Descirptive Parameters
+=======================================================================
+
+Column {data-width=1000}
+----------------------------------------------------------------------- 
+
+### Descirptive Parameters
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+        ),
+        mainPanel(
+          dataTableOutput("desc"),
+          hr(),
+           h5("Legend:"),
+           h6("- Arithmetic mean (MEAN)"),
+           h6("- Median (MEDIAN)"),
+           h6("- Standard deviation (SD)"),
+           h6("- Coefficient of Variation (CV)"),
+           h6("- Minimum (MIN)"),
+           h6("- Maximum (MAX)"),
+           h6("- Range (RANGE)"),
+           h6("- Skewness (SKEW)"),
+           h6("- Kurtosis (KURT)")
+          )
+),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+    
+  output$desc <- renderDataTable({
+    my_data <- selectedData()
+    dp <- describe(my_data, type=3)
+    kv <- dp$sd/dp$mean*100
+    dp <- cbind(dp,kv)
+    dp <- dp[c(3, 5, 4, 14, 8, 9, 10, 11, 12)]
+    colnames(dp) <- c("MEAN", "MEDIAN", "SD", "CV", "MIN", "MAX", "RANGE", "SKEW", "KURT")
+    dp <- round(dp, digits = 2)
+    dp %>% DT::datatable (rownames = TRUE, style = 'bootstrap', extensions = 'Buttons', options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+  })
+  
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+Testing for Normality 
+=======================================================================
+
+Column {data-width=1000}
+----------------------------------------------------------------------- 
+
+### Testing for Normality 
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio", 
+                       label = "Select Variable:",
+                       choices = colnames(numeric)),
+          
+            sliderInput("bins",
+                        "Number of Bins:",
+                        min = 1,
+                        max = 100,
+                        value = 7)
+        ),
+        mainPanel(
+          #h5("Normality Test"),
+          textOutput("ks"),
+          textOutput("lks"),
+          textOutput("ad"),
+          textOutput("sf"),
+          textOutput("sw"),
+          hr(),
+          h5("Histogram"),
+          plotOutput("histogram"),
+          hr(),
+          h5("Box and Whiskers Plot"),
+          plotOutput("box"),
+          hr(),
+          h5("Q-Q Plot"),
+          plotOutput("qq")
+          )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        numeric[, input$radio]
+  })
+      output$ks <- renderText({ 
+        x <- selectedData()
+        ks <- ks.test(x, "pnorm", mean=mean(x), sd=sd(x))
+        D <- round(ks[["statistic"]][["D"]], digits = 3)
+        pks <- round(ks[["p.value"]], digits = 3)
+        paste("Kolmogorov-Smirnov test:", "D = ", D,", p = ", pks)
+  })       
+      output$lks <- renderText({ 
+        x <- selectedData()
+        lt <- lillie.test(x)
+        Dlks <- round(lt[["statistic"]][["D"]], digits = 3)
+        plks <- round(lt[["p.value"]], digits = 3)
+        paste("Lilliefors test:", "D = ", Dlks,", p = ", plks)
+  })   
+      output$ad <- renderText({ 
+        x <- selectedData()
+        ad <- ad.test(x)
+        A <- round(ad[["statistic"]][["A"]], digits = 3)
+        pa <- round(ad[["p.value"]], digits = 3)
+        paste("Anderson-Darling test:", "A = ", A,", p = ", pa)
+  })   
+      output$sf <- renderText({ 
+        x <- selectedData()
+        sf <- sf.test(x)
+        Wsf <- round(sf[["statistic"]][["W"]], digits = 3)
+        psf <- round(sf[["p.value"]], digits = 3)
+        paste("Shapiro-Francia test:", "W = ", Wsf,", p = ", psf)
+  }) 
+      output$sw <- renderText({ 
+        x <- selectedData()
+        sw <- shapiro.test(x)
+        W <- round(sw$statistic, digits = 3)
+        psw <- round(sw$p.value, digits = 3)
+        paste("Shapiro-Wilk test:", "W = ", W,", p = ", psw)
+        
+  })
+      output$histogram <- renderPlot({
+        x <- selectedData()
+        ggplot(numeric, aes(x=x)) + 
+        geom_histogram(bins=input$bins, color="#000000", fill="#4477AA") +
+        labs(x= input$radio) +
+        theme_minimal()
+       })
+
+      output$box <- renderPlot({
+        x <- selectedData()
+        ggplot(numeric, aes(x)) + 
+        #geom_violin (color="#5BC0DE", fill="#5BC0DE", alpha=0.7) +
+        geom_boxplot(color="#000000", fill="#4477AA", outlier.colour="#D1495B", outlier.size=3) +
+        #stat_summary(fun=mean, geom="point", shape=16, size=2, color="#000000") +
+        labs(x = input$radio) +
+        theme_minimal()
+        
+       })   
+       
+       output$qq <- renderPlot({
+        x <- selectedData()
+        ggplot(numeric, aes(sample = x)) + 
+        stat_qq_line(color="#000000",size=1) + 
+        stat_qq(color="#4477AA", size=3) + 
+        labs(x = input$radio, y=input$radio) +
+        theme_minimal()
+       }) 
+        
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+Probability Calculator
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Normal (Gauss) Distribution - Probability Calculator
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+  sidebarPanel(
+       numericInput("as", "Mean", 180),
+       verbatimTextOutput("as"),
+       numericInput("sd", "Standard Deviation", 10),
+       verbatimTextOutput("sd"),
+       numericInput("rez", "Value (X)", 190),
+       verbatimTextOutput("rez"),
+  ),
+       mainPanel(
+         plotOutput("graf1"),
+         plotOutput("graf2")
+         ),
+      ),
+
+server <- function(input, output, session) {
+        output$graf1 <- renderPlot({
+        pnormGC(input$rez, region="above", mean=input$as,
+        sd=input$sd, graph=TRUE)
+       })
+       
+        output$graf2 <- renderPlot({
+        pnormGC(input$rez,region="below",mean=input$as,
+        sd=input$sd,graph=TRUE)
+        })
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Normal (Gauss) Distribution - Probability Calculator
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+  sidebarPanel(
+       numericInput("as", "Mean", 180),
+       verbatimTextOutput("as"),
+       numericInput("sd", "Standard Deviation", 10),
+       verbatimTextOutput("sd"),
+       numericInput("rez1", "First Value (X1)", 155),
+       verbatimTextOutput("rez1"),
+       numericInput("rez2", "Second Value (X2)", 194),
+       verbatimTextOutput("rez2"),
+      ),
+       mainPanel(
+         plotOutput("graf3"),
+         plotOutput("graf4")
+         ),
+      ),
+
+server <- function(input, output, session) {
+        output$graf3 <- renderPlot({
+        pnormGC(c(input$rez1, input$rez2), region="between", mean=input$as,
+        sd=input$sd, graph=TRUE)
+       })
+       
+        output$graf4 <- renderPlot({
+        pnormGC(c(input$rez1, input$rez2), region="outside", mean=input$as,
+        sd=input$sd, graph=TRUE)
+        })
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+Confidence Intervals for the Population Mean
+=======================================================================
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+### Confidence Intervals for the Population Mean
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio", 
+                       label = "Select Variable:",
+                       choices = colnames(numeric)),
+            sliderInput("p",
+                        "p-value:",
+                        min = 0.01,
+                        max = 0.99,
+                        value = 0.05),
+          sliderInput("nn",
+                        "Sample Size:",
+                        min = 3,
+                        max = 500,
+                        value = n)
+        ),
+        mainPanel(
+          #h4("Confidence Intervals for the Population Mean"),
+          htmlOutput("ci"),
+          plotOutput("asp")
+          )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        numeric[, input$radio]
+  })
+      
+      output$ci <- renderText({
+        xx <- selectedData()
+          as <- round(mean(xx), digits = 2)
+          sd <- round(sd(xx), digits = 2)
+          se <- round(sd/sqrt(input$nn), digits = 2)
+          t <- round(qt(input$p/2, input$nn, lower.tail = F), digits = 2)
+          x1 <- round(as-t*se, digits = 2)
+          x2 <- round(as+t*se, digits = 2)
+          paste( 
+                "Sample Size =", input$nn, "</br>",
+                "Sample Mean =", as, "</br>",
+                "Sample Standard Deviation =", sd, "</br>",
+                "Standard Error of the Mean =", se, "</br>",
+                "p =", input$p, "</br>",
+                "t =", t, "</br>",
+                "-----------------------------------------------------", "</br>",
+                "<b>", x1, "~ Population Mean ~", x2
+                )
+      }) 
+               
+      output$asp <- renderPlot({
+        xx <- selectedData()
+          as <- round(mean(xx), digits = 2)
+          sd <- round(sd(xx), digits = 2)
+          se <- round(sd/sqrt(input$nn), digits = 2)
+          t <- qt(input$p/2, input$nn, lower.tail = F)
+          x1 <- round(as-t*se, digits = 2)
+          x2 <- round(as+t*se, digits = 2)
+          x <- seq(as-3*sd, as+3*sd, length=2000)
+          y <- dnorm(x, mean=as, sd=sd)
+          plot(x, y, type = "l", lwd = 2, axes = FALSE, xlab = input$radio, ylab = "")
+          axis_bounds <- seq(-5*sd+as, 5*sd+as, by = sd)
+          axis(side = 1, at = axis_bounds, pos = 0)
+          a <- seq(x1,x2,length=2000)
+          b <- dnorm(x, mean=as, sd=sd)
+          polygon(c(x1, a, x2), c(0, b, 0), col="#4477AA")
+      }) 
+       
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
