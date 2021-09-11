@@ -17,7 +17,7 @@ library(nortest)
 library(tigerstats)
 library(bslib)
 
-setwd("~/R-aplikacije/Datoteke/CSV")
+#setwd("~/R-aplikacije/Datoteke/CSV")
 
 data <- read.table(file.choose(),                  
                    header = TRUE,                      
