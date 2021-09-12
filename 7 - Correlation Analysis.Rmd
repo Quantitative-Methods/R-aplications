@@ -16,7 +16,7 @@ library(psych)
 library(skimr)
 library(corrr)
 
-setwd("~/R-aplikacije/Datoteke/CSV")
+#setwd("~/R-aplikacije/Datoteke/CSV")
 
 data <- read.table(file.choose(),                  
                    header = TRUE,                      
