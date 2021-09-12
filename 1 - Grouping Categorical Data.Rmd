@@ -1,0 +1,193 @@
+---
+title: "Grouping Categorical Data"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(gmodels)
+library(ggthemes)
+
+setwd("~/R-aplikacije/Datoteke/CSV")
+
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+n <- nrow(data)                                  
+m <- ncol(data)
+nominal <- data %>% select_if(is.factor)
+var_name <- names(data)
+var_name_nominal <- names(nominal)
+```
+
+Data
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Data
+```{r}
+DT::datatable(data, style = 'bootstrap', 
+              filter = 'top', extensions = 'Buttons', 
+              options = list(pageLength = n, dom = 'Brti', buttons = c('copy','csv', 'excel'))) 
+```
+
+Frequency Tables
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Frequency Tables
+```{r}
+shinyApp(
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio", 
+                       label = "Select Variable:",
+                       choices = colnames(nominal)
+                       ), 
+                    ),
+        mainPanel(dataTableOutput ("tf"),
+                  textOutput ("chi"),
+                  hr(),
+                  plotOutput("graf1"),
+                  ),
+                ),
+server <- function(input, output, session){
+      
+      selectedData <- reactive({nominal[, input$radio]})
+      
+      output$tf <- renderDataTable({
+        var <- selectedData()
+        ft <- table(var)
+        tf <- as.data.frame(ft)
+        colnames(tf) <- c(input$radio, "F")
+        tf$RF <- tf$F/sum(tf$F)*100 
+        tf$CF <- cumsum(tf$F)
+        tf$RCF  <- cumsum(tf$RF)
+        colnames(tf) <- c(input$radio, "Frequency", "Percent", "Cumulative","Cumulative Percent")
+        tf%>% DT::datatable (rownames = FALSE, 
+                             style = 'bootstrap', 
+                             extensions = 'Buttons',
+                             options = list(pageLength = n, dom = 'B', buttons = c('copy'))
+                             ) %>% formatRound(c('Percent', 'Cumulative Percent'), 2)
+      })
+      
+      output$chi <- renderText({
+        var <- selectedData()
+        ft <- table(var)
+        tf <- as.data.frame(ft)
+        hi <- chisq.test(tf[2])
+        chi <- round(hi$statistic[1], digits = 3)
+        df <- round(hi$parameter[1], digits = 3)
+        p <- round(hi$p.value [1], digits = 3)
+        paste("Chi-square = ", chi,", df = ", df, ", p =", p)
+      })
+      
+      output$graf1 <- renderPlot({
+        var    <- selectedData()
+        ggplot(data, aes(x=var)) + 
+        geom_bar (color="#000000", fill="#4477AA")+
+        labs(x= input$radio, y = "Frequency") +
+        theme_classic()
+      })
+},
+shinyApp(ui = ui, server = server)
+)
+```
+
+Contingency Tables
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Contingency Tables
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("radio1", 
+                       label = "Select Variable 1:",
+                       choices = colnames(nominal)),
+          radioButtons("radio2", 
+                       label = "Select Variable 2:",
+                       choices = colnames(nominal)),
+        ),
+        mainPanel(
+          dataTableOutput ("ctf"),
+          textOutput ("chi"),
+          hr(),
+          plotOutput("graf1"),
+          hr(),
+          dataTableOutput ("ctfp"),
+          hr(),
+          plotOutput("graf2")
+        )
+),
+server <- function(input, output, session) {
+
+      selectedData1 <- reactive({nominal[, input$radio1]})
+      selectedData2 <- reactive({nominal[, input$radio2]})
+      
+      output$ctf <- renderDataTable({
+        var1 <- selectedData1()
+        var2 <- selectedData2()
+        ctf <- CrossTable(var1, var2)
+        ctf <- as.data.frame.matrix(ctf$t)
+        ctf$Total = rowSums(ctf[,])
+        ctf %>% DT::datatable (rownames = T, 
+                               style = 'bootstrap', 
+                               extensions = 'Buttons', 
+                               options = list(pageLength = 10, dom = 'B',buttons = c('copy'))
+                               ) 
+      })
+      output$ctfp <- renderDataTable({
+        var1 <- selectedData1()
+        var2 <- selectedData2()
+        ctfp <- CrossTable(var1, var2)
+        ctfp <- round(as.data.frame.matrix(ctfp$prop.row)*100, digits = 2)
+        ctfp$Total = round(rowSums(ctfp[,]), digits = 0)
+        ctfp %>% DT::datatable (rownames = T, 
+                                style = 'bootstrap', 
+                                extensions = 'Buttons', 
+                                options = list(pageLength = 10, dom = 'B',buttons = c('copy'))
+                                )
+      })
+      output$chi <- renderText({
+        var1 <- selectedData1()
+        var2 <- selectedData2()
+        chit <- CrossTable(var1, var2, chisq = T)
+        chi <- round(chit[["chisq"]][["statistic"]][["X-squared"]], digits = 3)
+        df <- round(chit[["chisq"]][["parameter"]][["df"]], digits = 3)
+        p <- round(chit[["chisq"]][["p.value"]], digits = 3)
+        paste("Chi-square = ", chi,", df = ", df, "p =", p)
+      })
+      output$graf1 <- renderPlot({
+        var1 <- selectedData1()
+        var2 <- selectedData2()
+        ggplot(nominal, aes(x=var1, fill = var2)) + 
+        geom_bar (color="#000000")+
+        labs(x= input$radio1, fill = input$radio2, y = "Frequency") +
+        theme_classic() + scale_fill_ptol()
+      })
+      output$graf2 <- renderPlot({
+        var1 <- selectedData1()
+        var2 <- selectedData2()
+        ggplot(nominal, aes(x=var1, fill = var2)) + 
+        geom_bar (color="#000000", position="fill")+
+        labs(x = input$radio1, fill = input$radio2, y = "Frequency") +
+        theme_classic() + scale_fill_ptol()
+      })
+},
+shinyApp(ui = ui, server = server)
+)
+```
