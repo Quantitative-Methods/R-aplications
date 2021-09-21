@@ -16,7 +16,7 @@ library(yacca)
 library(ggthemes)
 
 
-setwd("~/R-aplikacije/Datoteke/CSV")
+#setwd("~/R-aplikacije/Datoteke/CSV")
 
 data <- read.table(file.choose(),                  
                    header = TRUE,                      
