@@ -1,0 +1,212 @@
+---
+title: "Correlation Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(DT)
+library(psych)
+library(skimr)
+library(corrr)
+
+setwd("~/R-aplikacije/Data")
+
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+n <- nrow(data)                                  
+m <- ncol(data)
+numeric <- data %>% select_if(is.numeric)
+var_name <- names(data)
+var_name_numeric <- names(numeric)
+```
+
+Data
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Data
+```{r}
+DT::datatable(data, style = 'bootstrap', 
+              filter = 'top', 
+              extensions = 'Buttons', 
+              options = list(pageLength = n, dom = 'Brti', buttons = c('copy','csv', 'excel'))) 
+```
+
+Correlation Matrix
+=======================================================================
+Column {data-width=1000}
+----------------------------------------------------------------------- 
+### Correlation Matrix
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+         
+         radioButtons("method", "Method:",
+                   choices = c(Pearson = "pearson",
+                               Spearman = "spearman",
+                               Kendall = "kendall"),
+                   selected = "pearson"),
+
+        ),
+        mainPanel(
+          h5("Correlation Matrix"),
+          dataTableOutput("r"),
+          hr(),
+          h5("p - value"),
+          dataTableOutput("p"),
+          )
+),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+    
+  output$r <- renderDataTable({
+    my_data <- selectedData()
+    var_name_numeric <- names(my_data)
+    RP <- corr.test(my_data, method = input$method)
+    R <- RP$r
+    R %>% DT::datatable (rownames = TRUE, 
+                         style = 'bootstrap', 
+                         extensions = 'Buttons',
+                         options = list(pageLength = m, dom = 'Bt',buttons = c('copy'))) %>% formatRound(colnames(R), digits=2)
+   })
+  
+   output$p <- renderDataTable({
+    my_data <- selectedData()
+    var_name_numeric <- names(my_data)
+    RP <- corr.test(my_data, method = input$method)
+    P <- RP$p
+    P %>% DT::datatable (rownames = TRUE, 
+                         style = 'bootstrap', 
+                         extensions = 'Buttons', 
+                         options = list(pageLength = m, dom = 'Bt', buttons = c('copy'))) %>% 
+    formatRound(colnames(P), digits=4) %>% formatStyle(var_name_numeric, color = styleInterval(c(0.05), c('red', 'black')))
+  })
+  
+},
+
+shinyApp(ui = ui, server = server)
+)
+```
+
+Correlation Network
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Correlation Network
+```{r}
+
+shinyApp(
+  
+ui <- fluidPage(
+            sidebarPanel(
+              checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+              sliderInput("r",
+                        "Correlation Coefficient Level:",
+                        min = 0,
+                        max = 1,
+                        value = 0.35),
+     ),
+        mainPanel(
+           h5("Correlation Network"),
+           plotOutput("corPlot")
+       ),
+),
+server <- function(input, output, session) {
+  
+    selectedData <- reactive({
+    data[, input$select_vars]
+  })    
+  
+    output$corPlot <- renderPlot({
+    my_data <- selectedData()
+    my_data %>% correlate() %>% network_plot(min_cor=input$r)
+    })
+},
+shinyApp(ui = ui, server = server)
+)
+
+```
+
+Scatter Plot
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Scatter Plot
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+          radioButtons("xcol", 
+                       label = "Select Variable x:",
+                       choices = colnames(numeric)),
+            radioButtons("ycol", 
+                       label = "Select Variable y:",
+                       choices = colnames(numeric)),
+        ),
+        mainPanel(
+          h5("Scatter Plot"),
+          plotOutput("scatter"),
+            hr(),
+          h5("Correlation Coefficients"),
+          htmlOutput("r"),
+   )
+),
+server <- function(input, output, session) {
+
+      selectedData <- reactive({
+        numeric[, c(input$xcol, input$ycol)]
+        
+  })
+      output$scatter <- renderPlot({
+        xx    <- selectedData()
+        ggplot(xx, aes(x=xx[,1], y=xx[,2])) +
+        geom_point(size=2, colour = "#4477AA") +
+        geom_smooth(method = "lm", colour = "#D1495B", size=1, se = F) +
+        labs(x= input$xcol, y = input$ycol) +
+        theme_minimal()
+    })
+      
+      output$r <- renderText({ 
+        xx <- selectedData()
+        x <- xx[,1]
+        y <- xx[,2]
+        r <- round(cor(x, y, method = "pearson"), digits = 2)
+        rho <- round(cor(x, y, method = "spearman"), digits = 2)
+        tau <- round(cor(x, y, method = "kendall"), digits = 2)
+        pr <- cor.test(x, y, method = "pearson")
+        pr <- round(pr$p.value, digits = 3)
+        prho <- cor.test(x, y, method = "spearman")
+        prho <- round(prho$p.value, digits = 3)
+        ptau <- cor.test(x, y, method = "kendall")
+        ptau <- round(ptau$p.value, digits = 3)
+        paste(
+              "Pearson r = " , r, ", p =", pr, "</br>",
+              "Spearman rho = ", rho, ", p =", prho, "</br>",
+              "Kendell tau = ", tau, ", p =", ptau
+              )
+  })
+},
+shinyApp(ui = ui, server = server)
+)
+```
