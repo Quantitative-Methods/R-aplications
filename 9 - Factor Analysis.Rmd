@@ -1,0 +1,288 @@
+---
+title: "Factor Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+    logo: R_logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(DT)
+library(psych)
+library(ggthemes)
+```
+
+```{r}
+
+setwd("~/R-aplikacije/Data")
+
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+
+numeric <- data %>% select_if(is.numeric)
+varijable <- names(numeric)
+n <- nrow(numeric)                                  
+m <- ncol(numeric)
+fnames <- paste0("F", 1:m)
+R <- cor(numeric)
+ev <- eigen(R)
+ev <- ev$values
+k <- length(which(1 <= ev))
+
+    fit <- principal(numeric, nfactors=3, rotate="varimax")
+    FF <- fit$Structure[,1:2]
+
+```
+
+Data
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Data
+
+```{r}
+DT::datatable(data, style = 'bootstrap', 
+              filter = 'top', 
+              extensions = 'Buttons', 
+              options = list(pageLength = n, dom = 'Brti', buttons = c('copy','csv', 'excel')))
+```
+
+Factor Analysis
+=======================================================================
+Column {data-width=1000}
+-----------------------------------------------------------------------
+### Factor Analysis
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(
+        sidebarPanel(
+         checkboxGroupInput("select_vars", "Select Variables:",
+                            names(numeric), selected = names(numeric)),
+         sliderInput("k",
+                        "Number Principal Components:",
+                        step = 1,
+                        min = 1,
+                        max = m,
+                        value = k),
+         
+         radioButtons("method", "Rotated Principal Components:",
+                   choices = c(none = "none",
+                               varimax = "varimax",
+                               quartimax = "quartimax",
+                               obimin = "oblimin",
+                               promax = "promax"
+                               ),
+                   selected = "none"),
+        ),
+        mainPanel(
+          tabsetPanel(
+            tabPanel ("Factor Results", br(),
+              h5("Eigenvalue"),
+              dataTableOutput("Lamda"),
+              hr(),
+              htmlOutput("ssmc"),
+              plotOutput("spgk"),
+              hr(),
+              h5("Pattern Matrix"),
+              dataTableOutput("A"),
+              hr(),
+              h5("Structure Matrix"),
+              dataTableOutput("FF"),
+              hr(),
+              h5("Factor Correlation Matrix"),
+              dataTableOutput("M"),
+              hr(),
+              h5("Graph Factor Loadings (Variables)"),
+              plotOutput("GFF1"),
+              hr(),
+              h5("Graph Factor Loadings (Factors)"),
+              plotOutput("GFF2")
+              ),
+          tabPanel ("Factor Scores", br(),
+              dataTableOutput("Scores")
+              )
+            )
+          )
+       ),
+
+server <- function(input, output, session) {
+
+  selectedData <- reactive({
+    data[, input$select_vars]
+  })
+
+  output$Lamda <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    Eigenvalue <- fit$values
+    Cum.Eign <- cumsum(Eigenvalue)
+    Percentage <- Eigenvalue/sum(Eigenvalue)*100
+    Cum.Per <- cumsum(Percentage)
+    Lamda <- cbind(Eigenvalue, Cum.Eign, Percentage, Cum.Per)
+    rownames(Lamda) <- 1:mm
+    R <- cor(my_data)
+    SMC <- 1-(1/diag(solve(R)))
+    j <- rep(1,mm)
+    SSMC<- SMC %*% j
+    ssmc <- SSMC[1,1]
+    Lamda %>% DT::datatable (rownames = TRUE, 
+                             style = 'bootstrap', 
+                             extensions = 'Buttons', 
+                             options = list(pageLength = mm, dom = 'Bt',buttons = c('copy'))) %>% 
+                             formatRound(colnames(Lamda), digits=3) %>% 
+                             formatStyle('Eigenvalue', fontWeight = styleInterval(1, c('normal', 'bold'))) %>% 
+                             formatStyle('Cum.Eign', fontWeight = styleInterval(ssmc, c('bold','normal')))
+    })
+
+  output$ssmc <- renderText({ 
+     my_data <- selectedData()
+     mm <- ncol(my_data)
+     R <- cor(my_data)
+     SMC <- 1-(1/diag(solve(R)))
+     j <- rep(1,mm)
+     SSMC<- SMC %*% j
+     ssmc <- SSMC[1,1]
+     ev <- eigen(R)
+     ev <- ev$values
+     cum.eign <- cumsum(ev)
+     
+     gk <- length(which(ev >= 1 ))
+     pb <- length(which(cum.eign < ssmc))
+         
+     paste("Sum of Squares Multiple Correlation (SSMC) =", round(ssmc, digits = 2), br(),
+          "Number of Common Principal Components:", br(),
+           " - GK-Criterion (Guttman-Kiser) =", gk, br(),
+           " - PB-Criterion (Štalec-Momirović) =", pb, br(),
+           " - Scree Plot"
+           )
+     })
+     
+  output$spgk <- renderPlot({
+    my_data <- selectedData()
+     ev <- eigen(cor(my_data))
+     ev <- ev$values
+     mm <- ncol(my_data)
+     j <- c(1:mm)
+     evdf <- cbind.data.frame(j, ev)
+    ggplot(data=evdf, aes(x=j, y=ev))+
+      geom_point(color="#4477AA", size=4)+
+      geom_line(color="#4477AA", size=1)+
+      geom_abline(intercept = 1, slope = 0) +
+      labs(x ="Principal Components", y ="Eigenvalue", title= "") +
+      scale_x_continuous(breaks=min(evdf$j):max(evdf$j)) +
+      theme_minimal()
+
+  })
+    
+  output$A <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    Complexity <- fit$complexity
+    A <- fit$loadings
+    colnames(A) <- fnames[1:input$k]
+    A <- cbind(A,Complexity)
+    A %>% DT::datatable (rownames = TRUE, 
+                         style = 'bootstrap', 
+                         extensions = 'Buttons', 
+                         options = list(pageLength = mm, dom = 'Bt', buttons = c('copy'))) %>%
+                         formatRound(colnames(A), digits=3)
+   })
+
+   output$FF <- renderDataTable({
+    my_data <- selectedData()
+    mm <- ncol(my_data)
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    Communality <- fit$communality
+    FF <- fit$Structure
+    colnames(FF) <- fnames[1:input$k]
+    FF <- cbind(FF, Communality)
+    FF %>% DT::datatable (rownames = TRUE, 
+                          style = 'bootstrap', 
+                          extensions = 'Buttons', 
+                          options = list(pageLength = mm, dom = 'Bt',buttons = c('copy'))) %>%
+                          formatRound(colnames(FF), digits=3)
+   })
+  
+  output$M <- renderDataTable({
+    my_data <- selectedData()
+    fit <- principal(my_data, nfactors=input$k, rotate = input$method)
+    M <- cor(fit$scores)
+    colnames(M) <- fnames[1:input$k]
+    rownames(M) <- fnames[1:input$k]
+    M %>% DT::datatable (rownames = TRUE, 
+                         style = 'bootstrap', 
+                         extensions = 'Buttons', 
+                         options = list(pageLength = input$k, dom = 'Bt', buttons = c('copy'))) %>%
+                         formatRound(colnames(M), digits=3)
+   })
+  
+      
+  output$GFF1 <- renderPlot({
+    my_data <- selectedData()
+    var_names <- names(my_data)
+    mm <- ncol(my_data)
+    Faktori <- fnames[1:input$k]
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    F1 <- fit$loadings*fit$loadings
+    Fac <- rep(Faktori, each=mm)
+    Var <- rep(var_names, times=input$k)
+    Loa1 <- c()
+    for (a in 1:input$k) {Loa1 <- c(Loa1,F1[,a])}
+    FF1 <- data_frame(Fac,Var,Loa1)
+    
+    ggplot(data=FF1, aes(x=Var,y=Loa1,fill=Fac)) +
+      geom_bar(position ="stack",stat="identity") +
+      labs(x ="Variables", y ="Loadings", fill ="Factors",title= "") +
+      #facet_wrap(~Fac)+
+      theme_minimal() + scale_fill_ptol()
+  })
+  
+  output$GFF2 <- renderPlot({
+    my_data <- selectedData()
+    var_names <- names(my_data)
+    mm <- ncol(my_data)
+    Faktori <- fnames[1:input$k]
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    F1 <- fit$loadings*fit$loadings
+    Fac <- rep(Faktori, each=mm)
+    Var <- rep(var_names, times=input$k)
+    Loa1 <- c()
+    for (a in 1:input$k) {Loa1 <- c(Loa1,F1[,a])}
+    FF1 <- data_frame(Fac,Var,Loa1)
+    
+    ggplot(data=FF1, aes(x=Fac,y=Loa1,fill=Var)) +
+      geom_bar(position ="stack",stat="identity") +
+      labs(x ="Factors",y ="Loadings",fill ="Variables",title= "") +
+      theme_minimal() + scale_fill_ptol()
+  })
+  
+   selectedData <- reactive({
+    data[, input$select_vars]
+  })
+
+  output$Scores <- renderDataTable({
+    my_data <- selectedData()
+    fit <- principal(my_data, nfactors=input$k, rotate=input$method)
+    FS <- fit$scores
+    colnames(FS) <- fnames[1:input$k]
+    FS %>% DT::datatable (rownames = TRUE, 
+                          style = 'bootstrap', 
+                          extensions = 'Buttons', 
+                          options = list(pageLength = n, dom = 'Bt',buttons = c('copy'))) %>%
+                          formatRound(colnames(FS), digits=3)
+   })
+},
+shinyApp(ui = ui, server = server)
+)
+```

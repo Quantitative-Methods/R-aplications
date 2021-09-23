@@ -1,0 +1,24 @@
+###################
+# Install Package #
+###################
+
+install.packages("rmarkdown")
+remove.packages("rmarkdown")
+install.packages("https://cran.r-project.org/src/contrib/Archive/rmarkdown/rmarkdown_2.5.tar.gz", repos=NULL, type='source')
+install.packages("flexdashboard")
+install.packages("tidyverse")
+install.packages("DT")
+install.packages("psych")
+install.packages("ggthemes")
+install.packages("bslib")
+install.packages("candisc")
+install.packages("car")
+install.packages("corrr")
+install.packages("gmodels")
+install.packages("gplots")
+install.packages("lsr")
+install.packages("nortest")
+install.packages("Rmisc")
+install.packages("RVAideMemoire")
+install.packages("tigerstats")
+install.packages("yacca")
