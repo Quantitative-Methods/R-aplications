@@ -1,0 +1,260 @@
+---
+title: "Discriminant Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+runtime: shiny
+---
+
+```{r}
+library(flexdashboard)
+library(tidyverse)
+library(candisc)
+library(DT)
+library(MASS)
+library(gmodels)
+library(ggthemes)
+library(shinythemes)
+```
+
+```{r}
+
+setwd("~/R-aplikacije/Data")
+
+data <- read.table(file.choose(),                  
+                   header = TRUE,                      
+                   dec = ",",                          
+                   sep = ";",                          
+                   stringsAsFactors = TRUE,
+                   row.names = 1)
+
+Factor <- data %>% select_if(is.factor)
+Dependent <- data %>% select_if(is.numeric)
+X <- as.matrix(Dependent)
+my_data <- cbind(Factor, Dependent)
+m <- ncol(Dependent)
+g <- ncol(Factor)
+n <- nrow(my_data)
+dfnames <- paste0("DF", 1:m)
+```
+
+Data
+=======================================================================
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+### Data
+
+```{r}
+DT::datatable(data, style = 'bootstrap', 
+              filter = 'top', 
+              extensions = 'Buttons', 
+              options = list(pageLength = n, dom = 'Brti', buttons = c('copy','csv', 'excel')))
+```
+
+Discriminant Analysis
+=======================================================================
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+### Discriminant Analysis
+
+```{r}
+shinyApp(
+
+ui <- fluidPage(theme = shinytheme("cerulean"),
+        sidebarPanel(
+          checkboxGroupInput("dep", "Dependent Variables:",
+                            names(Dependent), selected = names(Dependent[1:m])),
+          radioButtons("indep", "Inependent Variable:",
+                       choices = colnames(Factor),
+                       selected = names(Factor[1]))
+        ),
+        mainPanel(
+           tabsetPanel(
+              tabPanel("Discriminant Analysis Results", br(),
+                dataTableOutput ("df"),
+                hr(),
+                h5("Structure Discriminant Functions"),
+                dataTableOutput("sdf"),
+                hr(),
+                h5("Group Centroids"),
+                dataTableOutput("cg"),
+                hr(),
+                h5("Graph Structure Discriminant Functions"),
+                plotOutput("gsdf")
+                ),
+              tabPanel("Discriminant Function Scores", br(), dataTableOutput("dfs")),
+              tabPanel("Classifications Matrix", br(), 
+                h5("Classifications Matrix (Frequency)"),
+                dataTableOutput("clas1"),
+                hr(),
+                h5("Classifications Matrix (%)"),
+                dataTableOutput("clas2"),
+                hr(),
+                "Rows: Actual classifications, Columns: Predicted classifications"
+                )
+            )
+        )
+    ),
+
+server <- function(input, output, session) {
+    
+     selectedData1 <- reactive({Dependent[, input$dep]})
+     selectedData2 <- reactive({Factor[, input$indep]})
+      
+      output$df <- renderDataTable({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lm(X ~ Y, data = my_data)
+        cd_candisc <- candisc(var_disc, data = my_data)
+        w <- Wilks(cd_candisc)
+        k <- cd_candisc$ndim
+        Eigenval <- round(cd_candisc$eigenvalues, digits = 3)
+        Canonical_corr <- round(sqrt((cd_candisc$canrsq)), digits = 3)
+        Wilks_lam <- round(w$`LR test stat`, digits = 3)
+        F_aprox <- round(w$`approx F`, digits = 3)
+        df1 <- w$numDF
+        df2 <- w$denDF
+        p_value <- round(w$`Pr(> F)`, digits = 3)
+        df <- cbind(Eigenval, Canonical_corr, Wilks_lam, F_aprox, df1, df2, p_value)
+        df <- data.frame(df)
+        colnames(df) <- c("Eigenvalue", "Canonical R", "Wilks' Lambda","aprox. F", "df1", "df2", "p-level")
+        df <- df[1:k,]
+        
+        df %>% DT::datatable (rownames = TRUE, 
+                              style = 'bootstrap', 
+                              extensions = 'Buttons', 
+                              options = list(pageLength = k, dom = 'Bt',buttons = c('copy')))
+      })
+      
+      output$sdf <- renderDataTable({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lm(X ~ Y, data = my_data)
+        cd_candisc <- candisc(var_disc, data = my_data)
+        k <- cd_candisc$ndim
+        sdf <- round(cd_candisc$structure, digits = 3)
+        sdf <- data.frame (sdf)
+        colnames(sdf) <- dfnames[1:k]
+        sdf %>% DT::datatable (rownames = TRUE, 
+                              style = 'bootstrap', 
+                              extensions = 'Buttons', 
+                              options = list(pageLength = m, dom = 'Bt',buttons = c('copy')))
+      })
+      
+      output$cg <- renderDataTable({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lm(X ~ Y, data = my_data)
+        cd_candisc <- candisc(var_disc, data = my_data)
+        f <- table(cd_candisc$factors)
+        k <- cd_candisc$ndim
+        cg <- round(cd_candisc$means, digits = 3)
+        cg <- data.frame(cg)
+        cg <- cbind.data.frame(f, cg)
+        colnames(cg) <- c(input$indep, "FREQ.", dfnames[1:k])
+        cg %>% DT::datatable (rownames = FALSE, 
+                              style = 'bootstrap', 
+                              extensions = 'Buttons', 
+                              options = list(pageLength = k+1, dom = 'Bt',buttons = c('copy')))
+      })
+      
+      
+      output$gsdf <- renderPlot({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lm(X ~ Y, data = my_data)
+        cd_candisc <- candisc(var_disc, data = my_data)
+        k <- cd_candisc$ndim
+        m <- ncol(Dependent)
+        sdf <- round(cd_candisc$structure, digits = 3)
+        sdf <- data.frame (sdf)
+        colnames(sdf) <- dfnames[1:k]
+        Varijable <- names(Dependent)
+        Faktori <- dfnames[1:k]
+        Fac <- rep(Faktori, each=m)
+        Var <- rep(Varijable, times=k)
+        L <- c()
+        for (a in 1:k) {L <- c(L,sdf[,a])}
+        gsdf <- data_frame(Fac,Var,L)
+        
+        ggplot(data=gsdf, aes(x=Fac, y=L, fill=Var)) +
+                geom_bar(position ="stack",stat="identity") +
+                labs(x ="Discriminant Function", y ="Loadings", fill ="Variables", title= "")+
+                theme_minimal() + scale_fill_ptol()
+        
+      })
+       
+      output$dfs <- renderDataTable({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lm(X ~ Y, data = my_data)
+        cd_candisc <- candisc(var_disc, data = my_data)
+        k <- cd_candisc$ndim
+        df1 <- cd_candisc$scores[1]
+        df2 <- cd_candisc$scores[1:k+1]
+        df2 <- round(df2, digits = 3)
+        dfs <- cbind(df1, df2)
+        colnames(dfs) <- c(input$indep, dfnames[1:k])
+        dfs <- data.frame(dfs)
+        dfs %>% DT::datatable (rownames = TRUE, 
+                              style = 'bootstrap', 
+                              extensions = 'Buttons', 
+                              options = list(pageLength = n, dom = 'Bt',buttons = c('copy')))
+       
+        })
+      
+      output$clas1 <- renderDataTable({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lda(Independent ~ X, my_data)
+        predict <- predict(var_disc, Independent)
+        predict <- predict$class
+        ctf <- CrossTable(predict, Independent)
+        ctf <- as.data.frame.matrix(ctf$t)
+        ctf$Total = colSums(ctf[,])
+        ctf %>% DT::datatable (rownames = T, 
+                               style = 'bootstrap', 
+                               extensions = 'Buttons', 
+                               options = list(pageLength = 100, dom = 'B',buttons = c('copy'))
+                               ) 
+        
+      })
+      
+      output$clas2 <- renderDataTable({
+        Dependent <- selectedData1()
+        Independent <- selectedData2()
+        X <- as.matrix(Dependent)
+        Y <- as.matrix(Independent)
+        var_disc <- lda(Independent ~ X, my_data)
+        predict <- predict(var_disc, Independent)
+        predict <- predict$class
+        ctfp <- CrossTable(predict, Independent)
+        ctfp <- round(as.data.frame.matrix(ctfp$prop.col)*100, digits = 2)
+        ctfp$Total = colSums(ctfp[,])
+        ctfp %>% DT::datatable (rownames = T, 
+                               style = 'bootstrap', 
+                               extensions = 'Buttons', 
+                               options = list(pageLength = 100, dom = 'B',buttons = c('copy'))
+                               )
+      })
+      
+},
+shinyApp(ui = ui, server = server)
+)
+```
