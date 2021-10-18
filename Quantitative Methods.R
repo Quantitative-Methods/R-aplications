@@ -1494,11 +1494,11 @@ ui <- dashboardPage(skin = "blue",
 				            width = 5,
 				            plotOutput("grafh"),
 				        )
-				     )
-			    )
-		   )
-		)
+			     	)
+		    	)
+	   	)
 	)
+)
 # Server #
 server <- function(input, output) { 
     selectedData <- reactive({
