@@ -1495,7 +1495,7 @@ ui <- dashboardPage(skin = "blue",
 				            plotOutput("grafh"),
 				        )
 				    )
-			   ),
+			   	),
 				# 20. About   
 				tabItem(tabName = "about",
 				    fluidRow(
@@ -1526,8 +1526,8 @@ ui <- dashboardPage(skin = "blue",
   							LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   							OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   							SOFTWARE."),
-  					) 
-				  )
+  						) 
+				  	)
 				)	
 			)
 		)
