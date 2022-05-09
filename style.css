@@ -1,0 +1,103 @@
+/*-Varijable za boje----------------- */
+/*-Logo---------------------------- */
+.skin-blue .main-header .logo {
+  background-color: #2c3444;
+}
+
+.skin-blue .main-header .logo:hover {
+  background-color: #2c3444;
+}
+
+.skin-blue .main-header .navbar .sidebar-toggle:hover {
+  background-color: #44546c;
+}
+
+/*-Heaader---------------------------- */
+.skin-blue .main-header .navbar {
+  background-color: #2c3444;
+}
+
+/*-Sidebar---------------------------- */
+.skin-blue .left-side, .skin-blue .main-sidebar, .skin-blue .wrapper {
+  background-color: #2c3444;
+}
+
+a:focus, a:hover {
+  text-decoration: underline;
+}
+
+.skin-blue .sidebar-menu > li.active > a, .skin-blue .sidebar-menu > li:hover > a {
+  color: #ffffff;
+  background: #44546c;
+  border-left-color: #637B9B;
+}
+
+.skin-blue .treeview-menu > li > a {
+  background: #2c3444;
+}
+
+/*-Content---------------------------- */
+.content-wrapper, .right-side {
+  background-color: #f2f4f7;
+}
+
+/*-Box---------------------------- */
+.box.box-solid.box-primary > .box-header {
+  color: #ffffff;
+  background-color: #2c3444;
+}
+
+.box.box-solid.box-primary {
+  border: 1px solid #2c3444;
+}
+
+.box-body {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 3px;
+  border-bottom-left-radius: 3px;
+  padding: 10px;
+}
+
+.box.box-primary {
+  border-top-color: #2c3444;
+}
+
+/*-Button ---------------------------- */
+.btn-default {
+  background-color: #2c3444;
+  color: #ffffff;
+  border-color: #2c3444;
+}
+
+.btn-default:hover {
+  background-color: #44546c;
+  color: #ffffff;
+  border-color: #44546c;
+}
+
+/*-Tab ------------------------------- */
+.nav-tabs-custom > .nav-tabs > li.active {
+  border-top-color: #2c3444;
+}
+
+/*-Progress bar ------------------------ */
+.progress-bar {
+  background-color: #637B9B;
+}
+
+/*-Table ------------------------------- */
+table {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+tbody {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.table.dataTable tbody td.active, .table.dataTable tbody tr.active td {
+  background-color: #f2f4f7;
+  color: #000000;
+}/*# sourceMappingURL=style.css.map */
