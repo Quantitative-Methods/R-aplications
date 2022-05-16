@@ -1,0 +1,26 @@
+###################
+# Install Package #
+###################
+
+install.packages("shinydashboard")
+install.packages("DT")
+install.packages("data.table")
+install.packages("readODS")
+install.packages("ggplot2")
+install.packages("ggdist")
+install.packages("psych")
+install.packages("tigerstats")
+install.packages("lsr")
+install.packages("Rmisc")
+install.packages("nortest")
+install.packages("emmeans")
+install.packages("rstatix")
+install.packages("afex")
+install.packages("gmodels")
+install.packages("car")
+install.packages("GPArotation")
+install.packages("yacca")
+install.packages("candisc")
+install.packages("MASS")
+install.packages("pwr")
+install.packages("dendextend")
