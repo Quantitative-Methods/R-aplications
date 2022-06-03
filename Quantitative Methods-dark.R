@@ -70,7 +70,7 @@ ui <- dashboardPage(
       tabItems(
         # 0 Home			
         tabItem(tabName = "home",
-                fluidRow("uantitative Methods",
+                fluidRow(
                          tags$div(class="home",
                            tags$ul(h4(
                              tags$li("Data Transformation:"),
