@@ -25,7 +25,7 @@ library(candisc)
 library(dendextend)
 
 ui <- dashboardPage(
-		dashboardHeader(title = img(src='logo1.jpg'), titleWidth = 260, disable = FALSE),
+		dashboardHeader(title = "Quantitative Methods",
 			dashboardSidebar(disable = FALSE,   width = 260,
 				sidebarMenu(
 				  menuItem("Home", tabName = "home", icon = icon("home")),
@@ -70,7 +70,7 @@ ui <- dashboardPage(
       tabItems(
         # 0 Home			
         tabItem(tabName = "home",
-                fluidRow(img(src='logo.jpg'),
+                fluidRow("uantitative Methods",
                          tags$div(class="home",
                            tags$ul(h4(
                              tags$li("Data Transformation:"),
