@@ -77,7 +77,7 @@ ui <- dashboardPage(
 					menuItem("Settings Graph", tabName = "setting", icon = icon("cog", lib = "glyphicon"))
 				)
 			),
-		dashboardBody(includeCSS("style2.css"),
+		dashboardBody(
       tabItems(
         # 0 Home			
         tabItem(tabName = "home",
