@@ -1,0 +1,143 @@
+
+/*-Logo---------------------------- */
+.skin-blue .main-header .logo {
+    background-color: #1f293b;
+  }
+  .skin-blue .main-header .logo:hover {
+    background-color: #1f293b;
+  }
+  .skin-blue .main-header .navbar .sidebar-toggle:hover {
+     background-color: #394c6d;
+  }
+  /*-Heaader---------------------------- */
+  .skin-blue .main-header .navbar {
+    background-color: #1f293b;
+  }
+  /*-Sidebar---------------------------- */
+  .skin-blue .sidebar a {
+    color: #ffffff;
+  }
+  .skin-blue .left-side, .skin-blue .main-sidebar, .skin-blue .wrapper {
+    background-color: #263248;
+  }
+  .skin-blue .sidebar-menu > li.active > a, .skin-blue .sidebar-menu > li:hover > a {
+    background: #394c6d;
+    color: #ffffff;
+    border-left: 4px solid #A81627;
+  }
+  .skin-blue .treeview-menu > li > a {
+    background: #263248;
+    color: #ffffff;
+  }
+  .skin-blue .treeview-menu > li.active > a, .skin-blue .treeview-menu > li > a:hover {
+    background: #394c6d;
+    color: #ffffff;
+    border-left: 4px solid #A81627;
+  }
+  .skin-blue .treeview-menu > li > :hover {
+    background: #394c6d;
+    color: #ffffff;
+  }
+  /*-Content---------------------------- */
+  .content-wrapper, .right-side {
+    background-color: #fafbfc;
+  }
+  /*-Box---------------------------- */
+  .box-header {
+    color: #000000;
+    background-color: #ffffff;
+    display: block;
+    padding: 10px;
+    position: relative;
+  }
+  .box.box-solid.box-primary > .box-header {
+    color: #000000;
+    background-color: #ffffff;
+    border-top: 3px solid #1f293b;
+    
+  }
+  .btn-box-tool {
+    background: #1f293b;
+    color: #ffffff;
+  }
+  
+  .box.box-solid.box-primary {
+    border: 1px solid #ffffff;
+  }
+  .box-body {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    padding: 10px;
+    color: #000000;
+    background-color: #ffffff;
+  }
+  .box.box-primary {
+    border-top: 3px solid #1f293b;
+    border-bottom: 1px solid #1f293b;
+  }
+  /*-Button ---------------------------- 
+  .btn-default {
+    background-color: #1f293b;
+    color: #ffffff;
+    border-color: #1f293b;
+  }
+  .btn-default:hover {
+    background-color: #364768;
+    color: #ffffff;
+    border-color: #364768;
+  }
+  .input-group .form-control {
+    background-color: #364768;
+    border-color: #364768;
+    color: #ffffff;
+  } */
+  /*-Progress bar ------------------------ */
+  .progress-bar {
+    background-color: #e6eaf2;
+    color: #000000;
+  }
+  /*-Tab ------------------------------- */
+  .nav-tabs-custom > .nav-tabs > li.active {
+    border-top-color: #1f293b;
+  }
+  .nav-tabs-custom > .nav-tabs > li.active:hover > a, .nav-tabs-custom > .nav-tabs > li.active > a {
+    background-color: #ffffff;
+    color: #000000;
+  }
+  .nav-tabs-custom > .nav-tabs {
+    color: #000000;
+    background-color: #ffffff;
+  }
+  .nav-tabs-custom > .nav-tabs > li > a {
+    color: #000000;
+  }
+  .nav-tabs-custom > .tab-content {
+    background: #ffffff;
+    color: #000000;
+    padding: 10px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+  }
+  /*-Table ------------------------------- */
+  .table.dataTable tbody td.active, .table.dataTable tbody tr.active td {
+    background-color: #e6eaf2;
+    color: #000000;
+  }
+  .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th {
+    background-color: #ffffff;
+    color: #000000;
+  }
+  /* - Input -------------------------------*/
+  
+.form-control {
+  background-color: #7c91bb;
+  color: #ffffff;
+  border-color: #7c91bb;
+}
+/* - Home -------------------------------*/
+.home {
+  padding-left: 60px;
+  color: #000000;
+}
