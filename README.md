@@ -1,5 +1,5 @@
-# Quantitative Methods
-Quantitative Methods is an R Shiny Web Applications for statistical-graphical data analysis that can be used in RStudio. The application allows the following analyzes:
+# R - STAT
+R - STAT is an R Shiny Web Applications for statistical-graphical data analysis that can be used in RStudio. The application allows the following analyzes:
 
 - Data Transformation
 - Grouping Categorical Data (Frequency Tables, Contingency Tables)
