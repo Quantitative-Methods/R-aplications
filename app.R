@@ -45,7 +45,7 @@ colors <-c("#4472C4","#c0504e","#9dbb61","#7f66a0","#4bafc7",
            "#7E9D40","#664F83","#358EA6","#F3740B","#95B3D7",
            "#D99694","#C3D69B","#B3A2C7","#93CDDD","#FAC090")
 
-thema <- 2
+thema <- 1
 
 if (thema == 1) {
   # Theme 1
