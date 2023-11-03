@@ -48,8 +48,8 @@ colors <-c("#4472C4","#c0504e","#9dbb61","#7f66a0","#4bafc7",
   mytheme <- create_theme(bs4dash_status(primary = "#007F5F", success = "#007F5F", info = "#272c30"))
   status <- "success"
   css <- "style1.css"
-  logo <- "logo.png"
-  home <- "www/home1.png"
+  #logo <- "logo.png"
+  #home <- "www/home1.png"
   preloader <- "#007F5F"
   
 # box------------
@@ -101,8 +101,7 @@ ui <- bs4DashPage(
     status = status,
     title = bs4DashBrand(
       color = status,
-      title = "R - STAT",
-      image = logo
+      title = "R - STAT"
     )
   ),
  
@@ -171,7 +170,7 @@ ui <- bs4DashPage(
                                        solidHeader = solidHeader,
                                        elevation = elevation,
                                        collapsible = F,
-                                       tags$img(src=home),
+                                       h1("R-STAT"),
                                        br(),
                                        h4("Version: 2.0"),
                                        hr(),
