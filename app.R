@@ -1726,7 +1726,7 @@ ui <- bs4DashPage(
                                 solidHeader = solidHeader,
                                 elevation = elevation,
                                 collapsible = F,
-                                tags$img(src=home), 
+                                h1("R-STAT"),
                                 br(),
                                 h4("Version: 2.0"),
                                 hr(),
