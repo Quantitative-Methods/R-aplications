@@ -52,8 +52,8 @@ if (thema == 1) {
   mytheme <- create_theme(bs4dash_status(primary = "#007F5F", success = "#007F5F", info = "#272c30"))
   status <- "success"
   css <- "style1.css"
-  logo <- "logo.png"
-  home <- "home1.png"
+ # logo <- "logo.png"
+ # home <- "home1.png"
   preloader <- "#007F5F"
   
   
@@ -62,8 +62,8 @@ if (thema == 1) {
   mytheme <- create_theme(bs4dash_status(primary = "#5E81AC", info = "#272c30"))
   status <- "primary"
   css <- "style2.css"
-  logo <- "logo.png"
-  home <- "home2.png"
+ # logo <- "logo.png"
+ # home <- "home2.png"
   preloader <- "#5E81AC"
 
 } else {
@@ -71,8 +71,8 @@ if (thema == 1) {
   mytheme <- create_theme(bs4dash_status(primary = "#BF616A", danger = "#BF616A", info = "#272c30"))
   status <- "danger"
   css   <- "style3.css"
-  logo  <- "logo.png"
-  home <- "home3.png"
+ # logo  <- "logo.png"
+ # home <- "home3.png"
   preloader <- "#BF616A"
 }
 
@@ -126,7 +126,7 @@ ui <- bs4DashPage(
     title = bs4DashBrand(
       color = status,
       title = "R - STAT",
-      image = logo
+     # image = logo
     )
   ),
  
@@ -178,7 +178,7 @@ ui <- bs4DashPage(
                bs4SidebarMenuSubItem("Chi Square - Distribution", tabName = "PCH")
       ),
       bs4SidebarMenuItem("About", tabName = "about", icon = icon("circle-info")),
-      bs4SidebarMenuItem("Help", tabName = "help", icon = icon("question"))
+     # bs4SidebarMenuItem("Help", tabName = "help", icon = icon("question"))
     )
   ),
   # Body
@@ -195,7 +195,8 @@ ui <- bs4DashPage(
                                        solidHeader = solidHeader,
                                        elevation = elevation,
                                        collapsible = F,
-                                       tags$img(src=home),
+                                       h1("R-STAT"),
+                                       #tags$img(src=home),
                                        br(),
                                        h4("Version: 2.0"),
                                        hr(),
@@ -1751,7 +1752,8 @@ ui <- bs4DashPage(
                                 solidHeader = solidHeader,
                                 elevation = elevation,
                                 collapsible = F,
-                                tags$img(src=home), 
+                                h1("R-STAT"),
+                               # tags$img(src=home), 
                                 br(),
                                 h4("Version: 2.0"),
                                 hr(),
