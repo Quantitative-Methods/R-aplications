@@ -152,8 +152,8 @@ ui <- bs4DashPage(
                bs4SidebarMenuSubItem("F - Distribution", tabName = "PCF"),
                bs4SidebarMenuSubItem("Chi Square - Distribution", tabName = "PCH")
       ),
-      bs4SidebarMenuItem("About", tabName = "about", icon = icon("circle-info")),
-      bs4SidebarMenuItem("Help", tabName = "help", icon = icon("question"))
+      bs4SidebarMenuItem("About", tabName = "about", icon = icon("circle-info"))
+      #bs4SidebarMenuItem("Help", tabName = "help", icon = icon("question"))
     )
   ),
   # Body
