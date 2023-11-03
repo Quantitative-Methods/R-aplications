@@ -182,7 +182,7 @@ ui <- bs4DashPage(
     )
   ),
   # Body
-  body = bs4DashBody(#includeCSS(css),
+  body = bs4DashBody(includeCSS(css),
               tabItems(
                   # Home			
                   tabItem(tabName = "home",
