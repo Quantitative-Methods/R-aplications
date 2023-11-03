@@ -45,10 +45,6 @@ colors <-c("#4472C4","#c0504e","#9dbb61","#7f66a0","#4bafc7",
            "#7E9D40","#664F83","#358EA6","#F3740B","#95B3D7",
            "#D99694","#C3D69B","#B3A2C7","#93CDDD","#FAC090")
 
-thema <- 1
-
-if (thema == 1) {
-  # Theme 1
   mytheme <- create_theme(bs4dash_status(primary = "#007F5F", success = "#007F5F", info = "#272c30"))
   status <- "success"
   css <- "style1.css"
@@ -56,26 +52,6 @@ if (thema == 1) {
   home <- "home1.png"
   preloader <- "#007F5F"
   
-  
-} else if (thema == 2) {
-  # Theme 2
-  mytheme <- create_theme(bs4dash_status(primary = "#5E81AC", info = "#272c30"))
-  status <- "primary"
-  css <- "style2.css"
-  logo <- "logo.png"
-  home <- "home2.png"
-  preloader <- "#5E81AC"
-
-} else {
-  # Theme 3
-  mytheme <- create_theme(bs4dash_status(primary = "#BF616A", danger = "#BF616A", info = "#272c30"))
-  status <- "danger"
-  css   <- "style3.css"
-  logo  <- "logo.png"
-  home <- "home3.png"
-  preloader <- "#BF616A"
-}
-
 # box------------
 headerBorder <- F
 solidHeader <- F
