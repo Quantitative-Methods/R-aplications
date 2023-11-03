@@ -49,7 +49,7 @@ colors <-c("#4472C4","#c0504e","#9dbb61","#7f66a0","#4bafc7",
   status <- "success"
   css <- "style1.css"
   logo <- "logo.png"
-  home <- "home1.png"
+  home <- "www/home1.png"
   preloader <- "#007F5F"
   
 # box------------
